@@ -1,0 +1,266 @@
+:host {
+  display: block;
+}
+
+.checkout-shell {
+  width: min(1100px, calc(100% - 2rem));
+  margin-inline: auto;
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1f7a3f;
+}
+
+.checkout-head h1 {
+  margin: 0.45rem 0 0;
+  color: #123e28;
+}
+
+.success-box,
+.empty-box {
+  margin-top: 1.2rem;
+  border: 1px solid rgba(18, 62, 40, 0.15);
+  border-radius: 18px;
+  background: #fff;
+  padding: 1rem;
+}
+
+.success-box h2,
+.empty-box h2 {
+  margin: 0;
+  color: #123e28;
+}
+
+.success-box p,
+.empty-box p {
+  margin: 0.5rem 0 0;
+  color: #4b6658;
+}
+
+.success-box a,
+.empty-box a {
+  margin-top: 0.8rem;
+  display: inline-flex;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  background: linear-gradient(120deg, #1f7a3f, #84cd3c);
+  color: #fff;
+  font-weight: 700;
+}
+
+.confirmation-card {
+  margin-top: 0.95rem;
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 0.8rem;
+  border: 1px solid rgba(18, 62, 40, 0.18);
+  border-radius: 14px;
+  padding: 0.7rem;
+  background: linear-gradient(140deg, #f5fbf3, #ffffff);
+}
+
+.confirmation-card img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.confirmation-card .label {
+  margin: 0;
+  color: #1f7a3f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.confirmation-card h3 {
+  margin: 0.3rem 0 0;
+  color: #123e28;
+}
+
+.manual-note {
+  font-size: 0.86rem;
+}
+
+.success-actions {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.success-actions button,
+.success-actions .secondary,
+.success-actions a {
+  border: 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+.success-actions button,
+.success-actions a {
+  background: linear-gradient(120deg, #1f7a3f, #84cd3c);
+  color: #fff;
+}
+
+.success-actions .secondary {
+  background: #fff;
+  color: #123e28;
+  border: 1px solid rgba(18, 62, 40, 0.2);
+}
+
+.checkout-layout {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.details-card,
+.summary-card {
+  border: 1px solid rgba(18, 62, 40, 0.14);
+  border-radius: 18px;
+  background: #fff;
+  padding: 0.9rem;
+}
+
+.details-card h2,
+.summary-card h2 {
+  margin: 0;
+  color: #123e28;
+  font-size: 1.2rem;
+}
+
+.details-card {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.details-card label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+  color: #214835;
+  font-size: 0.9rem;
+}
+
+.details-card input,
+.details-card textarea {
+  border: 1px solid rgba(18, 62, 40, 0.2);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  color: #123e28;
+  background: #fbfefb;
+}
+
+.details-card textarea {
+  resize: vertical;
+}
+
+.item-line {
+  margin-top: 0.7rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  color: #4b6658;
+  font-size: 0.88rem;
+}
+
+.line {
+  margin-top: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  color: #4b6658;
+}
+
+.line.total {
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed rgba(18, 62, 40, 0.2);
+  color: #123e28;
+}
+
+.payment-methods {
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed rgba(18, 62, 40, 0.2);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.payment-methods p {
+  margin: 0;
+  color: #123e28;
+  font-weight: 700;
+}
+
+.payment-methods label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #4b6658;
+  font-size: 0.9rem;
+}
+
+.summary-card button {
+  margin-top: 0.9rem;
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #1f7a3f, #84cd3c);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  padding: 0.68rem 1rem;
+  cursor: pointer;
+}
+
+.summary-card button.secondary {
+  margin-top: 0.55rem;
+  background: #fff;
+  color: #123e28;
+  border: 1px solid rgba(18, 62, 40, 0.2);
+}
+
+.summary-card button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.status-note {
+  margin-top: 0.65rem;
+  font-size: 0.85rem;
+  color: #1f7a3f;
+}
+
+@media (max-width: 900px) {
+  .checkout-layout,
+  .confirmation-card {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmation-card img {
+    height: 180px;
+  }
+}
+
+@media (max-width: 680px) {
+  .checkout-shell {
+    width: min(1100px, calc(100% - 1rem));
+  }
+}

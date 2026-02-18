@@ -1,0 +1,184 @@
+<main class="home-shell">
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content reveal">
+      <p class="kicker">Cloud Kitchen For Clean Eating</p>
+      <h1>Fresh Salads, Sprouts, and Better Water Delivered Daily</h1>
+      <p class="hero-copy">
+        Green Spoon brings chef-prepped healthy meals from our cloud kitchen to your doorstep.
+        Fast prep, premium ingredients, and subscription plans designed for busy routines.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" routerLink="/menu">Order From Menu</a>
+        <a class="btn btn-ghost" routerLink="/contact">Start Subscription</a>
+      </div>
+
+      <div class="hero-metrics">
+        <div>
+          <strong>18K+</strong>
+          <span>Healthy meals served</span>
+        </div>
+        <div>
+          <strong>30 Min</strong>
+          <span>Avg. city delivery</span>
+        </div>
+        <div>
+          <strong>100%</strong>
+          <span>Fresh daily prep</span>
+        </div>
+      </div>
+    </div>
+
+    <aside class="hero-brand-card reveal delay-1">
+      <img src="/videos/greenspoonlogo.jpeg" alt="Green Spoon logo" />
+      <h2>Fuel Your Day Naturally</h2>
+      <p>
+        Signature bowls, salads, and infused water made with farm-fresh ingredients and zero fuss.
+      </p>
+      <div class="chip-row">
+        <span>Sprouts</span>
+        <span>Salads</span>
+        <span>Better Water</span>
+      </div>
+    </aside>
+  </section>
+
+  <section class="section-block specialties">
+    <div class="section-head reveal">
+      <p class="kicker">Signature Kitchen</p>
+      <h2>What We Craft Every Day</h2>
+      <p>Inspired by your reference style with vibrant ingredients and bold greens, tailored for Green Spoon.</p>
+    </div>
+
+    <div class="category-grid">
+      @for (card of featuredCategories; track card.title) {
+        <article class="category-card reveal">
+          <span class="badge">{{ card.badge }}</span>
+          <img [src]="card.image" [alt]="card.title" />
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.subtitle }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="section-block better-water">
+    <div class="water-copy reveal">
+      <p class="kicker">Better Water</p>
+      <h2>Hydration With Real Citrus and Mint</h2>
+      <p>
+        Our infused water line is prepared in small batches with lemon, cucumber, and fresh herbs.
+        Ideal pairing for both salads and sprouts bowls.
+      </p>
+      <a class="btn btn-primary" routerLink="/menu">Explore Better Water</a>
+    </div>
+
+    <div class="water-gallery">
+      <img class="reveal" src="/images/food1.png" alt="Citrus infused water bottle" />
+      <img class="reveal delay-1" src="/images/food3.png" alt="Lemon and mint infused water" />
+      <img class="reveal delay-2" src="/images/food2.png" alt="Fresh salad with olive dressing" />
+    </div>
+  </section>
+
+  <section class="section-block plans">
+    <div class="section-head reveal">
+      <p class="kicker">Subscriptions</p>
+      <h2>Meal Plans That Fit Real Schedules</h2>
+    </div>
+
+    <div class="plan-grid">
+      @for (plan of planCards; track plan.title) {
+        <article class="plan-card reveal">
+          <h3>{{ plan.title }}</h3>
+          <p class="meal-count">{{ plan.meals }}</p>
+          <p class="price">{{ plan.price }} <span>/ month</span></p>
+          <p class="plan-note">{{ plan.points }}</p>
+          <a class="btn btn-ghost" routerLink="/contact">Choose Plan</a>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="section-block process">
+    <div class="section-head reveal">
+      <p class="kicker">How It Works</p>
+      <h2>Built For Cloud Kitchen Speed</h2>
+    </div>
+
+    <div class="steps-grid">
+      <article class="step-card reveal">
+        <span>01</span>
+        <h3>Pick Your Meals</h3>
+        <p>Choose sprouts, salads, and hydration packs from the daily menu.</p>
+      </article>
+
+      <article class="step-card reveal delay-1">
+        <span>02</span>
+        <h3>Kitchen Preps Fresh</h3>
+        <p>Your order is cooked and packed in our central cloud kitchen.</p>
+      </article>
+
+      <article class="step-card reveal delay-2">
+        <span>03</span>
+        <h3>Fast Doorstep Delivery</h3>
+        <p>Delivered in insulated packaging that keeps every meal fresh.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-block social-proof">
+    <div class="section-head reveal">
+      <p class="kicker">Customer Love</p>
+      <h2>Trusted By Busy Health-Conscious Foodies</h2>
+    </div>
+
+    <div class="testimonial-grid">
+      @for (review of testimonials; track review.name) {
+        <article class="review-card reveal">
+          <p class="quote">"{{ review.quote }}"</p>
+          <p class="author">{{ review.name }}</p>
+          <p class="role">{{ review.role }}</p>
+        </article>
+      }
+    </div>
+
+    <div class="city-bar reveal">
+      <p>Now serving:</p>
+      <div>
+        @for (city of serviceAreas; track city) {
+          <span>{{ city }}</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block cta-grid">
+    <article class="cta-card reveal">
+      <img src="/images/food5.png" alt="Green Spoon app coming soon" />
+      <div>
+        <h3>Green Spoon App Is Coming Soon</h3>
+        <p>Order, track, and customize healthy meals in one tap.</p>
+        <a class="btn btn-primary" routerLink="/contact">Get Early Access</a>
+      </div>
+    </article>
+
+    <article class="cta-card reveal delay-1">
+      <img src="/images/franchise.png" alt="Green Spoon franchise opportunity" />
+      <div>
+        <h3>Open A Green Spoon Cloud Kitchen</h3>
+        <p>Scale your city with our proven healthy-food operating model.</p>
+        <a class="btn btn-ghost" routerLink="/about">Franchise Details</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="final-cta">
+    <div class="reveal">
+      <p class="kicker">Ready To Eat Better?</p>
+      <h2>Start Your Green Spoon Plan Today</h2>
+      <p>Healthy food should be convenient. We built this kitchen to make that happen every day.</p>
+      <a class="btn btn-primary" routerLink="/menu">View Full Menu</a>
+    </div>
+  </section>
+</main>

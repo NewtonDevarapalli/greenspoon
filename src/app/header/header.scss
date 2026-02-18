@@ -1,0 +1,124 @@
+.site-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1200;
+  padding: 0.85rem 1rem;
+}
+
+.header-inner {
+  width: min(1160px, 100%);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 70, 38, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 30px rgba(11, 47, 25, 0.14);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-decoration: none;
+  font-family: 'Modak', cursive;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1;
+  letter-spacing: 0.6px;
+  margin-left: 0.4rem;
+}
+
+.brand-green {
+  color: #0f4f2a;
+}
+
+.brand-spoon {
+  color: #85cd3c;
+}
+
+.main-nav {
+  margin-left: auto;
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.main-nav a {
+  text-decoration: none;
+  font-family: 'Fredoka', sans-serif;
+  color: #234c34;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.main-nav a:hover {
+  background: rgba(133, 205, 60, 0.16);
+}
+
+.main-nav a.active {
+  background: linear-gradient(120deg, #1f7a3f, #84cd3c);
+  color: #ffffff;
+}
+
+.cart-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  border-radius: 999px;
+  background: #123e28;
+  color: #ffffff;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  padding: 0.45rem 0.95rem;
+  box-shadow: 0 10px 18px rgba(12, 54, 29, 0.25);
+}
+
+.cart-count {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #84cd3c;
+  color: #103623;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (max-width: 780px) {
+  .site-header {
+    padding-inline: 0.55rem;
+  }
+
+  .header-inner {
+    border-radius: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.5rem;
+  }
+
+  .main-nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin: 0;
+    flex-wrap: wrap;
+    padding-bottom: 0.2rem;
+  }
+
+  .brand {
+    margin-left: 0;
+  }
+}

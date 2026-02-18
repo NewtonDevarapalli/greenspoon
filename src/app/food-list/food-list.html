@@ -1,0 +1,10 @@
+<div class="grid">
+<mat-card *ngFor="let food of foods">
+<img mat-card-image [src]="food.image">
+<mat-card-title>{{food.name}}</mat-card-title>
+<mat-card-content>{{food.description}}</mat-card-content>
+<button mat-button color="primary" (click)="add(food)">
+Add ₹{{food.price}}
+</button>
+</mat-card>
+</div>

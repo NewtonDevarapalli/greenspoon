@@ -1,0 +1,73 @@
+<main class="contact-shell">
+  <section class="contact-hero">
+    <div>
+      <p class="kicker">Contact Green Spoon</p>
+      <h1>Tell Us What You Need, We&rsquo;ll Build the Right Plan</h1>
+      <p>
+        Reach us for meal subscriptions, catering, franchise opportunities, or support for your existing orders.
+      </p>
+    </div>
+    <img src="/images/food3.png" alt="Green Spoon infused water" />
+  </section>
+
+  <section class="contact-grid">
+    <form class="contact-form" aria-label="Contact form">
+      <h2>Send an Enquiry</h2>
+
+      <label>
+        Full Name
+        <input type="text" placeholder="Enter your name" />
+      </label>
+
+      <label>
+        Phone Number
+        <input type="tel" placeholder="Enter your phone number" />
+      </label>
+
+      <label>
+        Email
+        <input type="email" placeholder="Enter your email" />
+      </label>
+
+      <label>
+        I am interested in
+        <select>
+          <option>Meal Subscription</option>
+          <option>One-time Order Support</option>
+          <option>Corporate Meals</option>
+          <option>Franchise Opportunity</option>
+        </select>
+      </label>
+
+      <label>
+        Message
+        <textarea rows="4" placeholder="Tell us your requirement"></textarea>
+      </label>
+
+      <button type="button">Submit Enquiry</button>
+    </form>
+
+    <aside class="contact-side">
+      <div class="channel-list">
+        <h3>Reach Us Directly</h3>
+        @for (channel of channels; track channel.title) {
+          <article>
+            <h4>{{ channel.title }}</h4>
+            <p>{{ channel.detail }}</p>
+          </article>
+        }
+      </div>
+
+      <div class="city-card">
+        <h3>Service Cities</h3>
+        <div>
+          @for (city of serviceCities; track city) {
+            <span>{{ city }}</span>
+          }
+        </div>
+      </div>
+
+      <img src="/images/food5.png" alt="Green Spoon app preview" />
+    </aside>
+  </section>
+</main>

@@ -1,0 +1,65 @@
+<main class="menu-shell">
+  <section class="menu-hero">
+    <div>
+      <p class="kicker">Green Spoon Menu</p>
+      <h1>Cloud Kitchen Meals That Keep You Light and Energized</h1>
+      <p>
+        Choose from chef-designed sprouts, salads, and infused water made in small fresh batches every day.
+      </p>
+      <div class="tag-row">
+        @for (tag of topTags; track tag) {
+          <span>{{ tag }}</span>
+        }
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" routerLink="/cart">Build My Order</a>
+        <a class="btn btn-ghost" routerLink="/contact">Plan Subscriptions</a>
+      </div>
+    </div>
+    <img src="/images/food4.png" alt="Healthy Green Spoon meal" />
+  </section>
+
+  <section class="menu-grid-section">
+    <div class="section-head">
+      <p class="kicker">Featured Picks</p>
+      <h2>Today&rsquo;s Kitchen Highlights</h2>
+    </div>
+
+    <div class="menu-grid">
+      @for (item of menuItems; track item.name) {
+        <article class="menu-card">
+          <img [src]="item.image" [alt]="item.name" />
+          <div class="menu-card-content">
+            <span class="pill">{{ item.type }}</span>
+            <h3>{{ item.name }}</h3>
+            <p>{{ item.calories }}</p>
+            <div class="menu-card-footer">
+              <strong>INR {{ item.price }}</strong>
+              <button type="button" (click)="addToCart(item)">Add</button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="combo-section">
+    <div class="section-head">
+      <p class="kicker">Smart Combos</p>
+      <h2>Save More With Daily Packs</h2>
+    </div>
+
+    <div class="combo-grid">
+      @for (combo of combos; track combo.title) {
+        <article class="combo-card">
+          <h3>{{ combo.title }}</h3>
+          <p>{{ combo.detail }}</p>
+          <div>
+            <strong>{{ combo.price }}</strong>
+            <a routerLink="/contact">Get Plan</a>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+</main>

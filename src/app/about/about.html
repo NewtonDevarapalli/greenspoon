@@ -1,0 +1,63 @@
+<main class="about-shell">
+  <section class="about-hero">
+    <img src="/videos/greenspoonlogo.jpeg" alt="Green Spoon brand mark" />
+    <div>
+      <p class="kicker">About Green Spoon</p>
+      <h1>We Built a Cloud Kitchen to Make Healthy Eating Practical</h1>
+      <p>
+        Green Spoon combines chef workflows, fresh ingredients, and reliable delivery operations to
+        make better food part of your everyday routine.
+      </p>
+    </div>
+  </section>
+
+  <section class="story-block">
+    <div class="section-head">
+      <p class="kicker">Our Story</p>
+      <h2>From Daily Sprouts to Full Lifestyle Meals</h2>
+    </div>
+
+    <p>
+      What started as a simple idea around clean sprouts quickly grew into a full-stack cloud kitchen.
+      Today, we produce balanced salads, hydration options, and customizable meal subscriptions for
+      professionals, families, and fitness-focused customers.
+    </p>
+
+    <div class="timeline">
+      @for (item of milestones; track item.year) {
+        <article>
+          <span>{{ item.year }}</span>
+          <p>{{ item.detail }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="principles-block">
+    <div class="section-head">
+      <p class="kicker">Kitchen DNA</p>
+      <h2>How We Maintain Quality Every Day</h2>
+    </div>
+
+    <div class="principles-grid">
+      @for (item of principles; track item.title) {
+        <article>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.detail }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="ops-block">
+    <img src="/images/franchise.png" alt="Green Spoon cloud kitchen model" />
+    <div>
+      <p class="kicker">Operating Model</p>
+      <h2>Designed for Consistency, Ready for Scale</h2>
+      <p>
+        With centralized prep systems, transparent sourcing, and delivery-friendly packaging,
+        Green Spoon is built to serve cities efficiently while preserving food quality.
+      </p>
+    </div>
+  </section>
+</main>

@@ -1,0 +1,20 @@
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" routerLink="/" aria-label="Green Spoon Home">
+      <span class="brand-green">Green</span>
+      <span class="brand-spoon">Spoon</span>
+    </a>
+
+    <nav class="main-nav" aria-label="Primary navigation">
+      <a routerLink="/" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Home</a>
+      <a routerLink="/menu" routerLinkActive="active">Menu</a>
+      <a routerLink="/about" routerLinkActive="active">About</a>
+      <a routerLink="/contact" routerLinkActive="active">Contact</a>
+    </nav>
+
+    <a class="cart-link" routerLink="/cart" aria-label="Open cart">
+      Cart
+      <span class="cart-count">{{ cartCount() }}</span>
+    </a>
+  </div>
+</header>

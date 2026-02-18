@@ -1,0 +1,62 @@
+<main class="cart-shell">
+  <section class="cart-head">
+    <p class="kicker">Your Cart</p>
+    <h1>Review Items Before Checkout</h1>
+  </section>
+
+  @if (items().length === 0) {
+    <section class="empty-cart">
+      <h2>Your cart is empty</h2>
+      <p>Add fresh bowls, salads, and better water from the menu.</p>
+      <a routerLink="/menu">Go To Menu</a>
+    </section>
+  } @else {
+    <section class="cart-layout">
+      <div class="cart-items">
+        @for (item of items(); track item.id) {
+          <article class="item-card">
+            <img [src]="item.image" [alt]="item.name" />
+            <div class="item-main">
+              <p class="type">{{ item.type }}</p>
+              <h3>{{ item.name }}</h3>
+              <p class="meta">{{ item.calories }}</p>
+              <p class="price">INR {{ item.price }}</p>
+            </div>
+
+            <div class="item-actions">
+              <div class="qty-control">
+                <button type="button" (click)="decrement(item.id)">-</button>
+                <span>{{ item.quantity }}</span>
+                <button type="button" (click)="increment(item.id)">+</button>
+              </div>
+              <button class="remove" type="button" (click)="remove(item.id)">Remove</button>
+            </div>
+          </article>
+        }
+      </div>
+
+      <aside class="summary-card">
+        <h2>Order Summary</h2>
+        <div class="line">
+          <span>Subtotal</span>
+          <strong>INR {{ subtotal() }}</strong>
+        </div>
+        <div class="line">
+          <span>Delivery</span>
+          <strong>INR {{ deliveryFee() }}</strong>
+        </div>
+        <div class="line">
+          <span>Tax (5%)</span>
+          <strong>INR {{ tax() }}</strong>
+        </div>
+        <div class="line total">
+          <span>Total</span>
+          <strong>INR {{ grandTotal() }}</strong>
+        </div>
+
+        <a class="checkout" routerLink="/checkout">Proceed To Checkout</a>
+        <button class="clear" type="button" (click)="clear()">Clear Cart</button>
+      </aside>
+    </section>
+  }
+</main>
