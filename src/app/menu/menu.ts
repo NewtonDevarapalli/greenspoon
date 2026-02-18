@@ -30,7 +30,7 @@ export class Menu {
       type: 'Sprouts',
       calories: '320 kcal',
       price: 219,
-      image: '/hero.jpg'
+      image: 'hero.jpg'
     },
     {
       id: 'zesty-quinoa-salad',
@@ -38,7 +38,7 @@ export class Menu {
       type: 'Salads',
       calories: '280 kcal',
       price: 249,
-      image: '/images/food2.png'
+      image: 'images/food2.png'
     },
     {
       id: 'cucumber-mint-cooler',
@@ -46,7 +46,7 @@ export class Menu {
       type: 'Better Water',
       calories: '30 kcal',
       price: 99,
-      image: '/images/food1.png'
+      image: 'images/food1.png'
     },
     {
       id: 'color-crunch-salad',
@@ -54,7 +54,7 @@ export class Menu {
       type: 'Salads',
       calories: '300 kcal',
       price: 229,
-      image: '/images/food4.png'
+      image: 'images/food4.png'
     },
     {
       id: 'lemon-basil-hydrate',
@@ -62,7 +62,7 @@ export class Menu {
       type: 'Better Water',
       calories: '22 kcal',
       price: 89,
-      image: '/images/food3.png'
+      image: 'images/food3.png'
     },
     {
       id: 'chef-daily-bowl',
@@ -70,7 +70,7 @@ export class Menu {
       type: 'Sprouts',
       calories: '360 kcal',
       price: 269,
-      image: '/images/food4.png'
+      image: 'images/food4.png'
     }
   ];
 

@@ -47,7 +47,7 @@ export class Payment {
         currency: 'INR',
         name: this.businessName,
         description: `Order ${orderReference}`,
-        image: '/videos/greenspoonlogo.jpeg',
+        image: 'videos/greenspoonlogo.jpeg',
         prefill: {
           name: customer.name,
           email: customer.email,

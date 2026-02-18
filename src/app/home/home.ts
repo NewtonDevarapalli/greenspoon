@@ -14,19 +14,19 @@ export class Home {
       title: 'Sprouts Bowls',
       subtitle: 'Crunchy, protein-rich bowls with house dressings.',
       badge: 'Most Ordered',
-      image: '/images/food4.png'
+      image: 'images/food4.png'
     },
     {
       title: 'Farm Fresh Salads',
       subtitle: 'Colorful daily salads prepped from morning produce.',
       badge: 'Chef Pick',
-      image: '/images/food2.png'
+      image: 'images/food2.png'
     },
     {
       title: 'Better Water',
       subtitle: 'Lemon-mint infused hydration crafted every day.',
       badge: 'New',
-      image: '/images/food1.png'
+      image: 'images/food1.png'
     }
   ];
 
