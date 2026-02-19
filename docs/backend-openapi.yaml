@@ -1,0 +1,515 @@
+openapi: 3.0.3
+info:
+  title: Green Spoon Backend API
+  version: 1.0.0
+  description: API contract for Green Spoon cloud kitchen frontend integration.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://api.greenspoonfoods.com
+    description: Production
+tags:
+  - name: Payments
+  - name: Orders
+  - name: Tracking
+  - name: Notifications
+paths:
+  /payments/razorpay/order:
+    post:
+      tags: [Payments]
+      summary: Create Razorpay order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RazorpayOrderCreatePayload'
+      responses:
+        '200':
+          description: Razorpay order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RazorpayOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /payments/razorpay/verify:
+    post:
+      tags: [Payments]
+      summary: Verify Razorpay payment signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RazorpayVerifyPayload'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RazorpayVerifyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreatePayload'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Duplicate order id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Orders]
+      summary: List orders
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Orders list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderRecord'
+  /orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get order by id
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRecord'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders/{orderId}/status:
+    patch:
+      tags: [Orders]
+      summary: Update order status
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /tracking/{orderId}:
+    get:
+      tags: [Tracking]
+      summary: Get live tracking state
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tracking state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackingState'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /tracking/{orderId}/location:
+    post:
+      tags: [Tracking]
+      summary: Push rider location update
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackingLocationUpdate'
+      responses:
+        '200':
+          description: Update accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+  /notifications/whatsapp/confirmation:
+    post:
+      tags: [Notifications]
+      summary: Queue customer order confirmation WhatsApp message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppConfirmationRequest'
+      responses:
+        '200':
+          description: Queued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppConfirmationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+components:
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    CurrencyCode:
+      type: string
+      enum: [INR]
+    OrderStatus:
+      type: string
+      enum:
+        - created
+        - confirmed
+        - preparing
+        - out_for_delivery
+        - delivered
+        - cancelled
+    OrderPaymentMethod:
+      type: string
+      enum: [razorpay, whatsapp]
+    OrderCustomerInfo:
+      type: object
+      required: [name, phone]
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+    OrderAddress:
+      type: object
+      required: [line1, city]
+      properties:
+        line1:
+          type: string
+        city:
+          type: string
+        notes:
+          type: string
+    OrderTotals:
+      type: object
+      required: [subtotal, deliveryFee, tax, grandTotal]
+      properties:
+        subtotal:
+          type: number
+        deliveryFee:
+          type: number
+        tax:
+          type: number
+        grandTotal:
+          type: number
+    OrderItem:
+      type: object
+      required: [id, name, type, image, price, calories, quantity]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        image:
+          type: string
+        price:
+          type: number
+        calories:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    OrderCreatePayload:
+      type: object
+      required:
+        - orderId
+        - customer
+        - address
+        - items
+        - totals
+        - paymentMethod
+        - paymentReference
+      properties:
+        orderId:
+          type: string
+        customer:
+          $ref: '#/components/schemas/OrderCustomerInfo'
+        address:
+          $ref: '#/components/schemas/OrderAddress'
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        totals:
+          $ref: '#/components/schemas/OrderTotals'
+        paymentMethod:
+          $ref: '#/components/schemas/OrderPaymentMethod'
+        paymentReference:
+          type: string
+    OrderRecord:
+      allOf:
+        - $ref: '#/components/schemas/OrderCreatePayload'
+        - type: object
+          required: [status, createdAt, updatedAt]
+          properties:
+            status:
+              $ref: '#/components/schemas/OrderStatus'
+            createdAt:
+              type: integer
+              format: int64
+            updatedAt:
+              type: integer
+              format: int64
+    RazorpayOrderCreatePayload:
+      type: object
+      required: [orderReference, amount, currency]
+      properties:
+        orderReference:
+          type: string
+        amount:
+          type: number
+          minimum: 0.01
+        currency:
+          $ref: '#/components/schemas/CurrencyCode'
+    RazorpayOrderResponse:
+      type: object
+      required: [provider, providerOrderId, amount, currency, keyId]
+      properties:
+        provider:
+          type: string
+          enum: [razorpay]
+        providerOrderId:
+          type: string
+        amount:
+          type: number
+        currency:
+          $ref: '#/components/schemas/CurrencyCode'
+        keyId:
+          type: string
+    RazorpayVerifyPayload:
+      type: object
+      required: [orderReference, providerOrderId, paymentId, signature]
+      properties:
+        orderReference:
+          type: string
+        providerOrderId:
+          type: string
+        paymentId:
+          type: string
+        signature:
+          type: string
+    RazorpayVerifyResponse:
+      type: object
+      required: [verified, paymentReference]
+      properties:
+        verified:
+          type: boolean
+        paymentReference:
+          type: string
+        message:
+          type: string
+    TrackingPoint:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+    TrackingEvent:
+      type: object
+      required: [status, label, time]
+      properties:
+        status:
+          type: string
+          enum: [assigned, picked_up, on_the_way, nearby, delivered]
+        label:
+          type: string
+        time:
+          type: integer
+          format: int64
+    TrackingState:
+      type: object
+      required:
+        - orderId
+        - status
+        - agentName
+        - agentPhone
+        - etaMinutes
+        - current
+        - events
+        - updatedAt
+      properties:
+        orderId:
+          type: string
+        status:
+          type: string
+          enum: [assigned, picked_up, on_the_way, nearby, delivered]
+        agentName:
+          type: string
+        agentPhone:
+          type: string
+        etaMinutes:
+          type: integer
+        current:
+          $ref: '#/components/schemas/TrackingPoint'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackingEvent'
+        updatedAt:
+          type: integer
+          format: int64
+    TrackingLocationUpdate:
+      type: object
+      required: [lat, lng, status, etaMinutes]
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+        status:
+          type: string
+          enum: [assigned, picked_up, on_the_way, nearby, delivered]
+        etaMinutes:
+          type: integer
+          minimum: 0
+    WhatsAppConfirmationRequest:
+      type: object
+      required: [orderId, customerName, customerPhone, message]
+      properties:
+        orderId:
+          type: string
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        message:
+          type: string
+    WhatsAppConfirmationResponse:
+      type: object
+      required: [queued, channel]
+      properties:
+        queued:
+          type: boolean
+        channel:
+          type: string
+          enum: [whatsapp]
+        providerMessageId:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

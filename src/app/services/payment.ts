@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
+import { CurrencyCode } from '../models/order';
 
 export interface RazorpayCustomer {
   name: string;
@@ -8,6 +10,17 @@ export interface RazorpayCustomer {
 
 export interface RazorpayResult {
   paymentId: string;
+  providerOrderId: string;
+  signature: string;
+}
+
+export interface RazorpayCheckoutRequest {
+  keyId: string;
+  amountInRupees: number;
+  currency: CurrencyCode;
+  providerOrderId: string;
+  customer: RazorpayCustomer;
+  orderReference: string;
 }
 
 declare global {
@@ -23,16 +36,11 @@ declare global {
   providedIn: 'root',
 })
 export class Payment {
-  // Replace these with your production values when ready.
-  readonly razorpayKeyId = 'rzp_test_replace_with_your_key';
-  readonly upiId = 'greenspoon@upi';
-  readonly businessName = 'Green Spoon';
+  readonly razorpayKeyId = environment.payment.razorpayKeyId;
+  readonly upiId = environment.payment.upiId;
+  readonly businessName = environment.payment.businessName;
 
-  async launchRazorpay(
-    amountInRupees: number,
-    customer: RazorpayCustomer,
-    orderReference: string
-  ): Promise<RazorpayResult> {
+  async launchRazorpay(request: RazorpayCheckoutRequest): Promise<RazorpayResult> {
     await this.ensureRazorpayLoaded();
 
     if (!window.Razorpay) {
@@ -42,25 +50,43 @@ export class Payment {
 
     return new Promise<RazorpayResult>((resolve, reject) => {
       const razorpay = new RazorpayCtor({
-        key: this.razorpayKeyId,
-        amount: Math.round(amountInRupees * 100),
-        currency: 'INR',
+        key: request.keyId,
+        amount: Math.round(request.amountInRupees * 100),
+        currency: request.currency,
+        order_id: request.providerOrderId,
         name: this.businessName,
-        description: `Order ${orderReference}`,
+        description: `Order ${request.orderReference}`,
         image: 'videos/greenspoonlogo.jpeg',
         prefill: {
-          name: customer.name,
-          email: customer.email,
-          contact: customer.contact
+          name: request.customer.name,
+          email: request.customer.email,
+          contact: request.customer.contact
         },
         notes: {
-          order_reference: orderReference
+          order_reference: request.orderReference
         },
         theme: {
           color: '#1f7a3f'
         },
-        handler: (response: { razorpay_payment_id?: string }) => {
-          resolve({ paymentId: response.razorpay_payment_id ?? 'paid' });
+        handler: (response: {
+          razorpay_payment_id?: string;
+          razorpay_order_id?: string;
+          razorpay_signature?: string;
+        }) => {
+          if (
+            !response.razorpay_payment_id ||
+            !response.razorpay_order_id ||
+            !response.razorpay_signature
+          ) {
+            reject(new Error('Incomplete Razorpay payment response.'));
+            return;
+          }
+
+          resolve({
+            paymentId: response.razorpay_payment_id,
+            providerOrderId: response.razorpay_order_id,
+            signature: response.razorpay_signature,
+          });
         }
       });
 

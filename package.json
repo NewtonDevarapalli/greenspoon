@@ -6,7 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "backend:install": "npm --prefix backend install",
+    "backend:start": "npm --prefix backend start",
+    "backend:dev": "npm --prefix backend run dev"
   },
   "prettier": {
     "printWidth": 100,

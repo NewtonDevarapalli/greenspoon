@@ -4,7 +4,12 @@
     <h1>Track Your Delivery Agent In Real Time</h1>
   </section>
 
-  @if (!order()) {
+  @if (loading()) {
+    <section class="missing-order">
+      <h2>Loading tracking...</h2>
+      <p>Please wait while we fetch your latest rider status.</p>
+    </section>
+  } @else if (!order()) {
     <section class="missing-order">
       <h2>Tracking not available</h2>
       <p>We could not find this order tracking link.</p>

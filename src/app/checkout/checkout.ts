@@ -6,8 +6,10 @@ import { CartService } from '../services/cart';
 import { CartItem } from '../services/cart';
 import { Payment } from '../services/payment';
 import { TrackingService } from '../services/tracking';
+import { OrderApiService } from '../services/order-api';
+import { OrderPaymentMethod } from '../models/order';
 
-type PaymentMethod = 'razorpay' | 'whatsapp';
+type PaymentMethod = OrderPaymentMethod;
 
 @Component({
   selector: 'app-checkout',
@@ -42,7 +44,8 @@ export class Checkout {
   constructor(
     private readonly cart: CartService,
     private readonly payment: Payment,
-    private readonly tracking: TrackingService
+    private readonly tracking: TrackingService,
+    private readonly orderApi: OrderApiService
   ) {}
 
   items(): CartItem[] {
@@ -104,17 +107,42 @@ export class Checkout {
     const orderReference = this.generateOrderReference();
 
     try {
-      const result = await this.payment.launchRazorpay(
-        this.total(),
-        {
+      const razorpayOrder = await this.orderApi.createRazorpayOrder({
+        orderReference,
+        amount: this.total(),
+        currency: 'INR',
+      });
+
+      const checkoutResult = await this.payment.launchRazorpay({
+        keyId: razorpayOrder.keyId,
+        amountInRupees: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        providerOrderId: razorpayOrder.providerOrderId,
+        customer: {
           name: this.customerName,
           contact: this.customerPhone,
           email: this.customerEmail,
         },
-        orderReference
-      );
+        orderReference,
+      });
 
-      this.finalizeOrder(orderReference, `Razorpay (${result.paymentId})`);
+      const verification = await this.orderApi.verifyRazorpayPayment({
+        orderReference,
+        providerOrderId: checkoutResult.providerOrderId,
+        paymentId: checkoutResult.paymentId,
+        signature: checkoutResult.signature,
+      });
+
+      if (!verification.verified) {
+        this.statusMessage = verification.message ?? 'Payment verification failed.';
+        return;
+      }
+
+      await this.finalizeOrder(
+        orderReference,
+        'razorpay',
+        verification.paymentReference
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Payment failed.';
       this.statusMessage = message;
@@ -138,12 +166,16 @@ export class Checkout {
       'WhatsApp payment request opened. After receiving payment proof, click Confirm Order.';
   }
 
-  confirmWhatsAppPayment(): void {
+  async confirmWhatsAppPayment(): Promise<void> {
     if (!this.paymentRequested) {
       return;
     }
 
-    this.finalizeOrder(this.pendingOrderReference, 'WhatsApp Pay');
+    await this.finalizeOrder(
+      this.pendingOrderReference,
+      'whatsapp',
+      `manual-${this.pendingOrderReference}`
+    );
   }
 
   openCustomerWhatsAppConfirmation(): void {
@@ -171,29 +203,72 @@ export class Checkout {
     }
   }
 
-  private finalizeOrder(orderReference: string, paymentMode: string): void {
-    this.confirmedOrderReference = orderReference;
-    this.confirmedCustomerName = this.customerName;
-    this.confirmedCustomerPhone = this.customerPhone;
-    this.confirmedTotal = this.total();
-    this.confirmedPaymentMode = paymentMode;
-    this.trackedOrderId = orderReference;
+  private async finalizeOrder(
+    orderReference: string,
+    paymentMethod: OrderPaymentMethod,
+    paymentReference: string
+  ): Promise<void> {
+    const itemSnapshot = this.items().map((item) => ({ ...item }));
+    if (itemSnapshot.length === 0) {
+      this.statusMessage = 'Cart is empty. Please add items before placing order.';
+      return;
+    }
 
-    this.tracking.createOrderTracking({
-      orderId: orderReference,
-      customerName: this.customerName,
-      customerPhone: this.customerPhone,
-      addressLine: this.addressLine,
-      city: this.city,
-      notes: this.notes,
-      total: this.confirmedTotal,
-      paymentMode: paymentMode,
-    });
+    const subtotal = this.subtotal();
+    const deliveryFee = this.deliveryFee();
+    const tax = this.tax();
+    const grandTotal = subtotal + deliveryFee + tax;
 
-    this.orderPlaced = true;
-    this.paymentRequested = false;
-    this.pendingOrderReference = '';
-    this.cart.clear();
+    try {
+      const savedOrder = await this.orderApi.createOrder({
+        orderId: orderReference,
+        customer: {
+          name: this.customerName,
+          phone: this.customerPhone,
+          email: this.customerEmail || undefined,
+        },
+        address: {
+          line1: this.addressLine,
+          city: this.city,
+          notes: this.notes || undefined,
+        },
+        items: itemSnapshot,
+        totals: {
+          subtotal,
+          deliveryFee,
+          tax,
+          grandTotal,
+        },
+        paymentMethod,
+        paymentReference,
+      });
+
+      this.confirmedOrderReference = savedOrder.orderId;
+      this.confirmedCustomerName = savedOrder.customer.name;
+      this.confirmedCustomerPhone = savedOrder.customer.phone;
+      this.confirmedTotal = savedOrder.totals.grandTotal;
+      this.confirmedPaymentMode =
+        paymentMethod === 'razorpay' ? 'Razorpay' : 'WhatsApp Pay';
+      this.trackedOrderId = savedOrder.orderId;
+
+      await this.tracking.createOrderTracking({
+        orderId: savedOrder.orderId,
+        customerName: savedOrder.customer.name,
+        customerPhone: savedOrder.customer.phone,
+        addressLine: savedOrder.address.line1,
+        city: savedOrder.address.city,
+        notes: savedOrder.address.notes ?? '',
+        total: savedOrder.totals.grandTotal,
+        paymentMode: this.confirmedPaymentMode,
+      });
+
+      this.orderPlaced = true;
+      this.paymentRequested = false;
+      this.pendingOrderReference = '';
+      this.cart.clear();
+    } catch {
+      this.statusMessage = 'Order could not be saved. Please try again.';
+    }
   }
 
   private generateOrderReference(): string {

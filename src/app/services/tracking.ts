@@ -1,4 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export type DeliveryStatus =
   | 'assigned'
@@ -50,22 +54,25 @@ export interface NewTrackingOrder {
   paymentMode: string;
 }
 
-@Injectable({ providedIn: 'root' })
-export class TrackingService {
-  private readonly storageKey = 'greenspoon-live-tracking-v1';
-  private readonly ordersSignal = signal<Record<string, TrackingOrder>>(
-    this.readFromStorage()
-  );
-  private readonly timers = new Map<string, ReturnType<typeof setInterval>>();
+type OrderSnapshot = Record<string, TrackingOrder>;
 
-  readonly orders = this.ordersSignal.asReadonly();
+interface TrackingApiAdapter {
+  createOrderTracking(payload: NewTrackingOrder): Promise<TrackingOrder>;
+  getOrder(orderId: string): Promise<TrackingOrder | null>;
+}
+
+@Injectable({ providedIn: 'root' })
+export class LocalTrackingService implements TrackingApiAdapter {
+  private readonly storageKey = 'greenspoon-live-tracking-v1';
+  private readonly timers = new Map<string, ReturnType<typeof setInterval>>();
+  private readonly orders: OrderSnapshot = this.readFromStorage();
 
   constructor() {
     this.resumeActiveTracking();
   }
 
-  createOrderTracking(payload: NewTrackingOrder): TrackingOrder {
-    const existing = this.ordersSignal()[payload.orderId];
+  async createOrderTracking(payload: NewTrackingOrder): Promise<TrackingOrder> {
+    const existing = this.orders[payload.orderId];
     if (existing) {
       if (existing.status !== 'delivered') {
         this.startTicker(existing.orderId);
@@ -93,17 +100,14 @@ export class TrackingService {
       events: [{ status: 'assigned', label: this.statusLabel('assigned'), time: now }],
     };
 
-    this.ordersSignal.update((current) => ({
-      ...current,
-      [order.orderId]: order,
-    }));
+    this.orders[order.orderId] = order;
     this.persist();
     this.startTicker(order.orderId);
     return order;
   }
 
-  getOrder(orderId: string): TrackingOrder | null {
-    return this.ordersSignal()[orderId] ?? null;
+  async getOrder(orderId: string): Promise<TrackingOrder | null> {
+    return this.orders[orderId] ?? null;
   }
 
   statusLabel(status: DeliveryStatus): string {
@@ -121,11 +125,6 @@ export class TrackingService {
       default:
         return 'Tracking update';
     }
-  }
-
-  progressPercent(order: TrackingOrder): number {
-    const totalSteps = Math.max(1, order.route.length - 1);
-    return Math.round((order.progressIndex / totalSteps) * 100);
   }
 
   private startTicker(orderId: string): void {
@@ -150,7 +149,7 @@ export class TrackingService {
   }
 
   private advance(orderId: string): void {
-    const order = this.ordersSignal()[orderId];
+    const order = this.orders[orderId];
     if (!order) {
       this.stopTicker(orderId);
       return;
@@ -168,9 +167,12 @@ export class TrackingService {
     const nextEvents =
       order.events[order.events.length - 1]?.status === nextStatus
         ? order.events
-        : [...order.events, { status: nextStatus, label: this.statusLabel(nextStatus), time: now }];
+        : [
+            ...order.events,
+            { status: nextStatus, label: this.statusLabel(nextStatus), time: now },
+          ];
 
-    const updated: TrackingOrder = {
+    this.orders[orderId] = {
       ...order,
       progressIndex: nextIndex,
       current: order.route[nextIndex],
@@ -179,14 +181,9 @@ export class TrackingService {
       updatedAt: now,
       events: nextEvents,
     };
-
-    this.ordersSignal.update((current) => ({
-      ...current,
-      [orderId]: updated,
-    }));
     this.persist();
 
-    if (updated.status === 'delivered') {
+    if (this.orders[orderId].status === 'delivered') {
       this.stopTicker(orderId);
     }
   }
@@ -230,7 +227,11 @@ export class TrackingService {
     };
   }
 
-  private buildRoute(origin: DeliveryPoint, destination: DeliveryPoint, steps: number): DeliveryPoint[] {
+  private buildRoute(
+    origin: DeliveryPoint,
+    destination: DeliveryPoint,
+    steps: number
+  ): DeliveryPoint[] {
     const route: DeliveryPoint[] = [];
     for (let i = 0; i < steps; i += 1) {
       const t = i / (steps - 1);
@@ -244,7 +245,7 @@ export class TrackingService {
   }
 
   private resumeActiveTracking(): void {
-    const orders = Object.values(this.ordersSignal());
+    const orders = Object.values(this.orders);
     for (const order of orders) {
       if (order.status !== 'delivered') {
         this.startTicker(order.orderId);
@@ -262,7 +263,7 @@ export class TrackingService {
     return agents[Math.floor(Math.random() * agents.length)];
   }
 
-  private readFromStorage(): Record<string, TrackingOrder> {
+  private readFromStorage(): OrderSnapshot {
     try {
       if (!this.canUseStorage()) {
         return {};
@@ -273,7 +274,7 @@ export class TrackingService {
         return {};
       }
 
-      const parsed = JSON.parse(raw) as Record<string, TrackingOrder>;
+      const parsed = JSON.parse(raw) as OrderSnapshot;
       return parsed && typeof parsed === 'object' ? parsed : {};
     } catch {
       return {};
@@ -284,7 +285,7 @@ export class TrackingService {
     if (!this.canUseStorage()) {
       return;
     }
-    localStorage.setItem(this.storageKey, JSON.stringify(this.ordersSignal()));
+    localStorage.setItem(this.storageKey, JSON.stringify(this.orders));
   }
 
   private canUseStorage(): boolean {
@@ -298,4 +299,171 @@ export class TrackingService {
   private round(value: number): number {
     return Math.round(value * 1000000) / 1000000;
   }
+}
+
+@Injectable({ providedIn: 'root' })
+export class HttpTrackingService implements TrackingApiAdapter {
+  private readonly baseUrl = environment.api.baseUrl;
+
+  constructor(private readonly http: HttpClient) {}
+
+  async createOrderTracking(payload: NewTrackingOrder): Promise<TrackingOrder> {
+    const existing = await this.getOrder(payload.orderId);
+    if (existing) {
+      return existing;
+    }
+    return this.toFallbackTracking(payload);
+  }
+
+  async getOrder(orderId: string): Promise<TrackingOrder | null> {
+    try {
+      const dto = await firstValueFrom(
+        this.http.get<HttpTrackingDto>(`${this.baseUrl}/tracking/${orderId}`)
+      );
+      return this.mapHttpTracking(dto);
+    } catch (error) {
+      if (this.isNotFound(error)) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  private mapHttpTracking(dto: HttpTrackingDto): TrackingOrder {
+    const statusProgress: Record<DeliveryStatus, number> = {
+      assigned: 1,
+      picked_up: 3,
+      on_the_way: 7,
+      nearby: 10,
+      delivered: 13,
+    };
+    const routeLength = 14;
+    const progressIndex = Math.min(routeLength - 1, statusProgress[dto.status] ?? 0);
+    const route = Array.from({ length: routeLength }, () => ({ ...dto.current }));
+
+    return {
+      orderId: dto.orderId,
+      customerName: '',
+      customerPhone: '',
+      addressLine: '',
+      city: '',
+      notes: '',
+      total: 0,
+      paymentMode: '',
+      status: dto.status,
+      agentName: dto.agentName,
+      agentPhone: dto.agentPhone,
+      route,
+      progressIndex,
+      current: dto.current,
+      etaMinutes: dto.etaMinutes,
+      createdAt: dto.events[0]?.time ?? dto.updatedAt,
+      updatedAt: dto.updatedAt,
+      events: dto.events,
+    };
+  }
+
+  private toFallbackTracking(payload: NewTrackingOrder): TrackingOrder {
+    const now = Date.now();
+    return {
+      ...payload,
+      status: 'assigned',
+      agentName: 'Delivery agent',
+      agentPhone: 'Updating...',
+      route: [{ lat: 0, lng: 0 }],
+      progressIndex: 0,
+      current: { lat: 0, lng: 0 },
+      etaMinutes: 0,
+      createdAt: now,
+      updatedAt: now,
+      events: [{ status: 'assigned', label: 'Tracking will start shortly', time: now }],
+    };
+  }
+
+  private isNotFound(error: unknown): boolean {
+    return error instanceof HttpErrorResponse && error.status === 404;
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class TrackingService {
+  private readonly adapter: TrackingApiAdapter;
+  private readonly pollers = new Map<string, ReturnType<typeof setInterval>>();
+
+  constructor(
+    private readonly local: LocalTrackingService,
+    private readonly remote: HttpTrackingService
+  ) {
+    this.adapter = environment.api.orderApiMode === 'http' ? this.remote : this.local;
+  }
+
+  createOrderTracking(payload: NewTrackingOrder): Promise<TrackingOrder> {
+    return this.adapter.createOrderTracking(payload);
+  }
+
+  getOrder(orderId: string): Promise<TrackingOrder | null> {
+    return this.adapter.getOrder(orderId);
+  }
+
+  watchOrder(
+    orderId: string,
+    onChange: (order: TrackingOrder | null) => void,
+    intervalMs = 8000
+  ): () => void {
+    const existing = this.pollers.get(orderId);
+    if (existing) {
+      clearInterval(existing);
+      this.pollers.delete(orderId);
+    }
+
+    void this.getOrder(orderId).then((order) => onChange(order));
+
+    const timer = setInterval(() => {
+      void this.getOrder(orderId).then((order) => onChange(order));
+    }, intervalMs);
+
+    this.pollers.set(orderId, timer);
+
+    return () => {
+      const active = this.pollers.get(orderId);
+      if (!active) {
+        return;
+      }
+      clearInterval(active);
+      this.pollers.delete(orderId);
+    };
+  }
+
+  statusLabel(status: DeliveryStatus): string {
+    switch (status) {
+      case 'assigned':
+        return 'Delivery agent assigned';
+      case 'picked_up':
+        return 'Order picked up from kitchen';
+      case 'on_the_way':
+        return 'Rider is on the way';
+      case 'nearby':
+        return 'Rider is near your location';
+      case 'delivered':
+        return 'Order delivered';
+      default:
+        return 'Tracking update';
+    }
+  }
+
+  progressPercent(order: TrackingOrder): number {
+    const totalSteps = Math.max(1, order.route.length - 1);
+    return Math.round((order.progressIndex / totalSteps) * 100);
+  }
+}
+
+interface HttpTrackingDto {
+  orderId: string;
+  status: DeliveryStatus;
+  agentName: string;
+  agentPhone: string;
+  etaMinutes: number;
+  current: DeliveryPoint;
+  events: DeliveryEvent[];
+  updatedAt: number;
 }

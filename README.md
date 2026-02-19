@@ -1,59 +1,117 @@
-# Greenspoonfoods
+# Green Spoon Cloud Kitchen App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.4.
+Green Spoon is an Angular web app for healthy cloud-kitchen ordering with:
+- Branded marketing pages (`Home`, `Menu`, `About`, `Contact`)
+- Cart and checkout
+- Razorpay payment flow
+- Manual WhatsApp payment + confirmation workflow
+- Customer order tracking page (`/track/:orderId`)
 
-## Development server
+## Tech Stack
 
-To start a local development server, run:
+- Angular 21 (standalone components)
+- TypeScript
+- SCSS
+- Local storage persistence for local mode
 
-```bash
-ng serve
-```
+## Run Locally
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Install dependencies:
 
 ```bash
-ng generate --help
+npm install
+npm run backend:install
 ```
 
-## Building
-
-To build the project run:
+Start backend API (terminal 1):
 
 ```bash
-ng build
+npm run backend:start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Start frontend app (terminal 2):
 
 ```bash
-ng test
+npm start
 ```
 
-## Running end-to-end tests
+Open:
 
-For end-to-end (e2e) testing, run:
+`http://localhost:4200/`
+
+## Build
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Production build output:
 
-## Additional Resources
+`dist/greenspoonfoods/browser`
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Environment Configuration
+
+Files:
+- `src/environments/environment.ts` (development)
+- `src/environments/environment.prod.ts` (production)
+
+Important fields:
+
+```ts
+api: {
+  baseUrl: 'http://localhost:3000',
+  orderApiMode: 'local' // set to 'http' to use backend APIs
+},
+payment: {
+  razorpayKeyId: 'rzp_test_replace_with_your_key',
+  businessName: 'Green Spoon',
+  upiId: 'greenspoon@upi'
+}
+```
+
+## Payment Flows
+
+### Razorpay
+1. Frontend requests backend order (`POST /payments/razorpay/order`)
+2. Opens Razorpay checkout
+3. Verifies signature (`POST /payments/razorpay/verify`)
+4. Creates final order (`POST /orders`)
+5. Tracking page polls backend (`GET /tracking/:orderId`)
+
+### WhatsApp Pay (manual)
+1. Frontend opens WhatsApp with UPI payment message
+2. Customer sends payment proof manually
+3. Staff confirms and creates order in app
+4. Staff can send confirmation message from checkout screen
+
+## Backend Contract
+
+Full API contract is documented in:
+
+`docs/backend-api-contract.md`
+
+OpenAPI spec for Swagger/Postman import:
+
+`docs/backend-openapi.yaml`
+
+This includes:
+- Orders API
+- Razorpay API
+- Tracking API (recommended for production live tracking)
+- WhatsApp confirmation logging endpoint (optional)
+
+## GitHub Pages Build
+
+If deploying to `https://<username>.github.io/greenspoon/`, build with:
+
+```bash
+ng build --configuration production --base-href /greenspoon/
+```
+
+Then publish `dist/greenspoonfoods/browser`.
+
+## Tests
+
+```bash
+npm test
+```
