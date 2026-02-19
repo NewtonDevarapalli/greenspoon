@@ -10,7 +10,24 @@
       <h2>Search By Phone</h2>
       <label for="phoneInput">Phone Number</label>
       <input id="phoneInput" type="tel" [(ngModel)]="phoneInput" placeholder="e.g. 9000010021" />
-      <button type="button" (click)="searchByPhone()" [disabled]="loading()">Find Orders</button>
+
+      @if (!otpRequested()) {
+        <button type="button" (click)="requestPhoneOtp()" [disabled]="loading()">Request OTP</button>
+      } @else {
+        <label for="otpInput">OTP</label>
+        <input id="otpInput" type="text" [(ngModel)]="otpInput" placeholder="Enter OTP" />
+        @if (debugOtpHint()) {
+          <p class="debug-hint">Demo OTP: {{ debugOtpHint() }}</p>
+        }
+        <div class="otp-actions">
+          <button type="button" (click)="verifyPhoneOtpAndSearch()" [disabled]="loading()">
+            Verify OTP and Find Orders
+          </button>
+          <button type="button" class="ghost-btn" (click)="resetPhoneLookup()" [disabled]="loading()">
+            Reset
+          </button>
+        </div>
+      }
     </article>
 
     <article class="search-card">

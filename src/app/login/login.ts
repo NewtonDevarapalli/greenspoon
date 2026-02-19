@@ -64,8 +64,11 @@ export class Login {
       return;
     }
 
-    if (this.route.snapshot.queryParamMap.get('reason') === 'forbidden') {
+    const reason = this.route.snapshot.queryParamMap.get('reason');
+    if (reason === 'forbidden') {
       this.infoMessage = 'Your account does not have permission for that page.';
+    } else if (reason === 'session_expired') {
+      this.infoMessage = 'Your session expired. Please sign in again.';
     }
   }
 
@@ -80,7 +83,7 @@ export class Login {
 
     this.isSubmitting = true;
     try {
-      const result = this.auth.login(this.email, this.password);
+      const result = await this.auth.login(this.email, this.password);
       if (!result.ok) {
         this.errorMessage = result.message || 'Login failed.';
         return;

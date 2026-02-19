@@ -1,0 +1,67 @@
+.blocked-shell {
+  min-height: calc(100vh - 90px);
+  display: grid;
+  place-items: center;
+  padding: 1.3rem 1rem 2.2rem;
+}
+
+.blocked-card {
+  width: min(620px, 100%);
+  border-radius: 22px;
+  border: 1px solid rgba(124, 44, 24, 0.28);
+  background: #fffaf5;
+  box-shadow: 0 18px 32px rgba(113, 40, 23, 0.16);
+  padding: 1.2rem 1.05rem;
+  color: #4f2b1f;
+}
+
+.kicker {
+  margin: 0 0 0.35rem;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  color: #a34f2e;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+}
+
+p {
+  font-family: 'Fredoka', sans-serif;
+}
+
+.details {
+  margin-top: 0.82rem;
+  border-radius: 14px;
+  border: 1px solid rgba(157, 80, 42, 0.22);
+  background: #fff3e8;
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.details p {
+  margin: 0;
+}
+
+.actions {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.actions a {
+  text-decoration: none;
+  border-radius: 10px;
+  background: #8f4024;
+  color: #fff;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+}

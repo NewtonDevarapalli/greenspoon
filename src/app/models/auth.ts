@@ -14,4 +14,9 @@ export interface AuthSession {
   role: AppRole;
   tenantId: string;
   loginAt: number;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresIn?: string;
+  authMode?: 'local' | 'http';
 }

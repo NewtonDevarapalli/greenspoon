@@ -19,8 +19,12 @@ export class MyOrders {
   readonly errorMessage = signal('');
   readonly statusMessage = signal('');
   readonly foundOrders = signal<OrderRecord[]>([]);
+  readonly otpRequested = signal(false);
+  readonly otpRequestId = signal('');
+  readonly debugOtpHint = signal('');
 
   phoneInput = '';
+  otpInput = '';
   orderIdInput = '';
 
   constructor(
@@ -29,7 +33,7 @@ export class MyOrders {
     private readonly router: Router
   ) {}
 
-  async searchByPhone(): Promise<void> {
+  async requestPhoneOtp(): Promise<void> {
     const digits = this.normalizePhone(this.phoneInput);
     if (digits.length < 10) {
       this.errorMessage.set('Enter a valid phone number.');
@@ -39,21 +43,71 @@ export class MyOrders {
     this.loading.set(true);
     this.errorMessage.set('');
     this.statusMessage.set('');
+    try {
+      const response = await this.orderApi.requestCustomerLookupOtp({
+        phone: digits,
+      });
+      this.otpRequested.set(true);
+      this.otpRequestId.set(response.requestId);
+      this.debugOtpHint.set(response.debugOtp ?? '');
+      this.statusMessage.set(
+        response.debugOtp
+          ? `OTP sent. Demo OTP: ${response.debugOtp}`
+          : 'OTP sent to your registered phone number.'
+      );
+    } catch (error) {
+      this.errorMessage.set(this.extractErrorMessage(error));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async verifyPhoneOtpAndSearch(): Promise<void> {
+    const digits = this.normalizePhone(this.phoneInput);
+    if (digits.length < 10) {
+      this.errorMessage.set('Enter a valid phone number.');
+      return;
+    }
+    if (!this.otpRequested() || !this.otpRequestId()) {
+      this.errorMessage.set('Request OTP first.');
+      return;
+    }
+    if (!this.otpInput.trim()) {
+      this.errorMessage.set('Enter the OTP.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.errorMessage.set('');
+    this.statusMessage.set('');
     this.foundOrders.set([]);
     try {
-      const orders = await this.orderApi.listOrders();
-      const matched = orders.filter((order) =>
-        this.normalizePhone(order.customer.phone).endsWith(digits.slice(-10))
-      );
+      const matched = await this.orderApi.lookupCustomerOrdersByPhone({
+        phone: digits,
+        requestId: this.otpRequestId(),
+        otpCode: this.otpInput.trim(),
+      });
       this.foundOrders.set(matched);
       if (matched.length === 0) {
         this.statusMessage.set('No orders found for this phone number.');
+      } else {
+        this.statusMessage.set(`Found ${matched.length} order(s).`);
       }
     } catch (error) {
       this.errorMessage.set(this.extractErrorMessage(error));
     } finally {
       this.loading.set(false);
     }
+  }
+
+  resetPhoneLookup(): void {
+    this.otpRequested.set(false);
+    this.otpRequestId.set('');
+    this.debugOtpHint.set('');
+    this.otpInput = '';
+    this.statusMessage.set('');
+    this.errorMessage.set('');
+    this.foundOrders.set([]);
   }
 
   async searchByOrderId(): Promise<void> {

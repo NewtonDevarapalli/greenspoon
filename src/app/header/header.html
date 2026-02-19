@@ -8,11 +8,16 @@
     <nav class="main-nav" aria-label="Primary navigation">
       <a routerLink="/" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Home</a>
       <a routerLink="/menu" routerLinkActive="active">Menu</a>
-      <a routerLink="/my-orders" routerLinkActive="active">My Orders</a>
+      @if (showMyOrders()) {
+        <a routerLink="/my-orders" routerLinkActive="active">My Orders</a>
+      }
       <a routerLink="/about" routerLinkActive="active">About</a>
       <a routerLink="/contact" routerLinkActive="active">Contact</a>
+      @if (canAccessTenantOps()) {
+        <a routerLink="/admin/tenants" routerLinkActive="active">Tenants</a>
+      }
       @if (canAccessAdmin()) {
-        <a routerLink="/admin/orders" routerLinkActive="active">Admin</a>
+        <a routerLink="/admin/orders" routerLinkActive="active">Orders</a>
       }
       @if (canAccessDispatch()) {
         <a routerLink="/admin/dispatch" routerLinkActive="active">Dispatch</a>

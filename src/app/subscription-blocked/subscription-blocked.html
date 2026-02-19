@@ -1,0 +1,30 @@
+<main class="blocked-shell">
+  <section class="blocked-card">
+    <p class="kicker">Subscription Required</p>
+    <h1>Tenant Subscription Is Not Active</h1>
+    <p>
+      Order processing is currently blocked. Renew or reactivate the subscription to continue
+      operations.
+    </p>
+
+    @if (state()) {
+      <div class="details">
+        <p><strong>Tenant:</strong> {{ state()!.tenantId || 'Unknown' }}</p>
+        <p><strong>Status:</strong> {{ state()!.subscriptionStatus || 'Unknown' }}</p>
+        @if (state()!.currentPeriodEnd) {
+          <p><strong>Period End:</strong> {{ state()!.currentPeriodEnd | date: 'medium' }}</p>
+        }
+        <p><strong>Message:</strong> {{ state()!.message }}</p>
+      </div>
+    }
+
+    <div class="actions">
+      @if (isPlatformAdmin()) {
+        <a routerLink="/admin/tenants" (click)="clearState()">Open Tenant Console</a>
+      } @else {
+        <a routerLink="/contact" (click)="clearState()">Contact Platform Support</a>
+      }
+      <a routerLink="/" (click)="clearState()">Back To Home</a>
+    </div>
+  </section>
+</main>

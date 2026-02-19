@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  tenantId   String   @id
+  name       String
+  createdAt  DateTime
+  updatedAt  DateTime
+}
+
+model Subscription {
+  tenantId           String   @id
+  plan               String
+  status             String
+  amount             Int
+  currency           String
+  startAt            DateTime
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  updatedAt          DateTime
+}
+
+model Order {
+  orderId    String   @id
+  tenantId   String
+  status     String
+  createdAt  DateTime
+  updatedAt  DateTime
+  payload    Json
+
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+}
+
+model Tracking {
+  orderId     String   @id
+  tenantId    String
+  status      String
+  etaMinutes  Int
+  updatedAt   DateTime
+  payload     Json
+
+  @@index([tenantId, status])
+}
+
+model PaymentOrder {
+  providerOrderId String   @id
+  orderReference  String
+  amount          Int
+  currency        String
+  createdAt       DateTime
+  payload         Json
+}
+
+model Notification {
+  id        String   @id
+  tenantId  String
+  orderId   String
+  channel   String
+  createdAt DateTime
+  payload   Json
+
+  @@index([tenantId, createdAt])
+}
+
+model RefreshToken {
+  token     String   @id
+  userId    String
+  tenantId  String
+  createdAt DateTime
+  expiresAt DateTime
+
+  @@index([userId])
+  @@index([tenantId, expiresAt])
+}
+
+model CustomerLookupOtp {
+  requestId String   @id
+  phone     String
+  tenantId  String
+  otpCode   String
+  attempts  Int      @default(0)
+  createdAt DateTime
+  expiresAt DateTime
+
+  @@index([tenantId, phone, expiresAt])
+}

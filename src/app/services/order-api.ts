@@ -15,6 +15,9 @@ import { WhatsAppConfirmationResponse } from '../models/order';
 import { DeliveryConfirmationPayload } from '../models/order';
 import { DeliveryFeeMode } from '../models/order';
 import { DeliveryFeeSettlementStatus } from '../models/order';
+import { CustomerLookupOtpRequest } from '../models/order';
+import { CustomerLookupOtpResponse } from '../models/order';
+import { CustomerOrderLookupRequest } from '../models/order';
 
 interface OrderApiAdapter {
   createOrder(payload: OrderCreatePayload): Promise<OrderRecord>;
@@ -34,12 +37,20 @@ interface OrderApiAdapter {
     orderId: string,
     payload: DeliveryConfirmationPayload
   ): Promise<OrderRecord | null>;
+  requestCustomerLookupOtp(
+    payload: CustomerLookupOtpRequest
+  ): Promise<CustomerLookupOtpResponse>;
+  lookupCustomerOrdersByPhone(
+    payload: CustomerOrderLookupRequest
+  ): Promise<OrderRecord[]>;
 }
 
 @Injectable({ providedIn: 'root' })
 export class LocalOrderApiService implements OrderApiAdapter {
   private readonly storageKey = 'greenspoon-orders-v1';
   private readonly paymentOrdersKey = 'greenspoon-payment-orders-v1';
+  private readonly defaultTenantId = 'greenspoon-demo-tenant';
+  private readonly customerOtpKey = 'greenspoon-customer-lookup-otp-v1';
   private readonly allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
     created: ['confirmed', 'cancelled'],
     confirmed: ['preparing', 'cancelled'],
@@ -55,8 +66,10 @@ export class LocalOrderApiService implements OrderApiAdapter {
     const deliveryFeeSettlementStatus =
       payload.deliveryFeeSettlementStatus ??
       this.defaultSettlementStatus(deliveryFeeMode);
+    const tenantId = payload.tenantId ?? this.defaultTenantId;
     const order: OrderRecord = {
       ...payload,
+      tenantId,
       status: 'confirmed',
       deliveryFeeMode,
       deliveryFeeSettlementStatus,
@@ -214,6 +227,50 @@ export class LocalOrderApiService implements OrderApiAdapter {
     return updated;
   }
 
+  async requestCustomerLookupOtp(
+    payload: CustomerLookupOtpRequest
+  ): Promise<CustomerLookupOtpResponse> {
+    const phone = payload.phone.replace(/\D/g, '');
+    if (phone.length < 10) {
+      throw new Error('Enter a valid phone number.');
+    }
+    const requestId = `otp-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
+    const debugOtp = `${Math.floor(1000 + Math.random() * 9000)}`;
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+    const store = this.readOtpStore();
+    store[requestId] = {
+      phone,
+      debugOtp,
+      expiresAt,
+    };
+    this.persistOtpStore(store);
+    return { requestId, expiresAt, debugOtp };
+  }
+
+  async lookupCustomerOrdersByPhone(
+    payload: CustomerOrderLookupRequest
+  ): Promise<OrderRecord[]> {
+    const phone = payload.phone.replace(/\D/g, '');
+    const store = this.readOtpStore();
+    const requested = store[payload.requestId];
+    if (!requested || requested.expiresAt < Date.now()) {
+      throw new Error('OTP request expired. Please request a new OTP.');
+    }
+    if (requested.phone.slice(-10) !== phone.slice(-10)) {
+      throw new Error('Phone number does not match OTP request.');
+    }
+    if (payload.otpCode.trim() !== requested.debugOtp) {
+      throw new Error('Invalid OTP.');
+    }
+
+    delete store[payload.requestId];
+    this.persistOtpStore(store);
+
+    return Object.values(this.readAll())
+      .filter((order) => this.normalizePhone(order.customer.phone).endsWith(phone.slice(-10)))
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
   private readAll(): Record<string, OrderRecord> {
     try {
       if (!this.canUseStorage()) {
@@ -268,6 +325,38 @@ export class LocalOrderApiService implements OrderApiAdapter {
       return;
     }
     localStorage.setItem(this.paymentOrdersKey, JSON.stringify(data));
+  }
+
+  private readOtpStore(): Record<string, { phone: string; debugOtp: string; expiresAt: number }> {
+    try {
+      if (!this.canUseStorage()) {
+        return {};
+      }
+      const raw = localStorage.getItem(this.customerOtpKey);
+      if (!raw) {
+        return {};
+      }
+      const parsed = JSON.parse(raw) as Record<
+        string,
+        { phone: string; debugOtp: string; expiresAt: number }
+      >;
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private persistOtpStore(
+    data: Record<string, { phone: string; debugOtp: string; expiresAt: number }>
+  ): void {
+    if (!this.canUseStorage()) {
+      return;
+    }
+    localStorage.setItem(this.customerOtpKey, JSON.stringify(data));
+  }
+
+  private normalizePhone(phone: string): string {
+    return phone.replace(/\D/g, '');
   }
 
   private isValidTransition(current: OrderStatus, next: OrderStatus): boolean {
@@ -390,6 +479,25 @@ export class HttpOrderApiService implements OrderApiAdapter {
     }
   }
 
+  requestCustomerLookupOtp(
+    payload: CustomerLookupOtpRequest
+  ): Promise<CustomerLookupOtpResponse> {
+    return firstValueFrom(
+      this.http.post<CustomerLookupOtpResponse>(
+        `${this.baseUrl}/orders/customer/request-otp`,
+        payload
+      )
+    );
+  }
+
+  lookupCustomerOrdersByPhone(
+    payload: CustomerOrderLookupRequest
+  ): Promise<OrderRecord[]> {
+    return firstValueFrom(
+      this.http.post<OrderRecord[]>(`${this.baseUrl}/orders/customer/lookup`, payload)
+    );
+  }
+
   private isNotFound(error: unknown): boolean {
     return error instanceof HttpErrorResponse && error.status === 404;
   }
@@ -448,5 +556,17 @@ export class OrderApiService implements OrderApiAdapter {
     payload: DeliveryConfirmationPayload
   ): Promise<OrderRecord | null> {
     return this.adapter.confirmDelivery(orderId, payload);
+  }
+
+  requestCustomerLookupOtp(
+    payload: CustomerLookupOtpRequest
+  ): Promise<CustomerLookupOtpResponse> {
+    return this.adapter.requestCustomerLookupOtp(payload);
+  }
+
+  lookupCustomerOrdersByPhone(
+    payload: CustomerOrderLookupRequest
+  ): Promise<OrderRecord[]> {
+    return this.adapter.lookupCustomerOrdersByPhone(payload);
   }
 }

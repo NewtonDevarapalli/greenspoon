@@ -9,7 +9,10 @@
     "test": "ng test",
     "backend:install": "npm --prefix backend install",
     "backend:start": "npm --prefix backend start",
-    "backend:dev": "npm --prefix backend run dev"
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:db:migrate": "npm --prefix backend run prisma:migrate",
+    "backend:db:generate": "npm --prefix backend run prisma:generate",
+    "backend:db:seed": "npm --prefix backend run prisma:seed"
   },
   "prettier": {
     "printWidth": 100,

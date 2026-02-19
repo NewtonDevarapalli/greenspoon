@@ -66,6 +66,7 @@ export interface OrderItem {
 
 export interface OrderCreatePayload {
   orderId: string;
+  tenantId?: string;
   customer: OrderCustomerInfo;
   address: OrderAddress;
   items: OrderItem[];
@@ -132,4 +133,20 @@ export interface DeliveryConfirmationPayload {
   collectionAmount?: number;
   collectionMethod?: DeliveryCollectionMethod;
   collectionNotes?: string;
+}
+
+export interface CustomerLookupOtpRequest {
+  phone: string;
+}
+
+export interface CustomerLookupOtpResponse {
+  requestId: string;
+  expiresAt: number;
+  debugOtp?: string;
+}
+
+export interface CustomerOrderLookupRequest {
+  phone: string;
+  requestId: string;
+  otpCode: string;
 }

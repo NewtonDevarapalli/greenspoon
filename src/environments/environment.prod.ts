@@ -4,7 +4,7 @@ export const environment: AppEnvironment = {
   production: true,
   api: {
     baseUrl: 'https://api.greenspoonfoods.com',
-    orderApiMode: 'local',
+    orderApiMode: 'http',
   },
   payment: {
     razorpayKeyId: 'rzp_live_replace_with_your_key',

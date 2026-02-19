@@ -10,6 +10,8 @@ Green Spoon is an Angular web app for healthy cloud-kitchen ordering with:
 - Customer order tracking page (`/track/:orderId`)
 - Customer self-service order lookup (`/my-orders`)
 - Role-based login for enterprise users (`/login`)
+- Backend JWT auth + RBAC for admin/dispatch APIs
+- Tenant subscription module (monthly/quarterly/yearly) with operational enforcement
 - Admin kitchen order console (`/admin/orders`)
 - Dispatch console for rider updates and WhatsApp queue logs (`/admin/dispatch`)
 
@@ -18,7 +20,7 @@ Green Spoon is an Angular web app for healthy cloud-kitchen ordering with:
 - Angular 21 (standalone components)
 - TypeScript
 - SCSS
-- Local storage persistence for local mode
+- Backend persistence with PostgreSQL + Prisma (HTTP mode)
 
 ## Run Locally
 
@@ -27,6 +29,28 @@ Install dependencies:
 ```bash
 npm install
 npm run backend:install
+```
+
+Configure backend environment (`backend/.env`):
+- set `DATABASE_URL` to your PostgreSQL instance
+- keep JWT/Razorpay values as needed
+
+Initialize Prisma (first run):
+
+```bash
+cd backend
+npx prisma migrate deploy
+npx prisma generate
+npx prisma db seed
+cd ..
+```
+
+Or from repo root:
+
+```bash
+npm run backend:db:migrate
+npm run backend:db:generate
+npm run backend:db:seed
 ```
 
 Start backend API (terminal 1):
@@ -66,7 +90,7 @@ Important fields:
 ```ts
 api: {
   baseUrl: 'http://localhost:3000',
-  orderApiMode: 'local' // set to 'http' to use backend APIs
+  orderApiMode: 'http' // backend APIs + JWT auth + tenant/subscription enforcement
 },
 payment: {
   razorpayKeyId: 'rzp_test_replace_with_your_key',
@@ -102,6 +126,7 @@ OpenAPI spec for Swagger/Postman import:
 
 This includes:
 - Orders API
+- Customer OTP self-service lookup API
 - Razorpay API
 - Tracking API (recommended for production live tracking)
 - WhatsApp confirmation logging endpoint (optional)

@@ -1,19 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
-import { Login } from './login';
+import { AdminTenants } from './admin-tenants';
 
-describe('Login', () => {
-  let component: Login;
-  let fixture: ComponentFixture<Login>;
+describe('AdminTenants', () => {
+  let component: AdminTenants;
+  let fixture: ComponentFixture<AdminTenants>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Login],
-      providers: [provideRouter([]), provideHttpClient()],
+      imports: [AdminTenants],
+      providers: [provideHttpClient()],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Login);
+    fixture = TestBed.createComponent(AdminTenants);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

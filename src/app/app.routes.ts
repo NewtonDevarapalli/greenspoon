@@ -11,6 +11,8 @@ import { AdminDispatch } from './admin-dispatch/admin-dispatch';
 import { MyOrders } from './my-orders/my-orders';
 import { Login } from './login/login';
 import { authRoleGuard } from './guards/auth-role.guard';
+import { AdminTenants } from './admin-tenants/admin-tenants';
+import { SubscriptionBlocked } from './subscription-blocked/subscription-blocked';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -19,9 +21,16 @@ export const routes: Routes = [
   { path: 'checkout', component: Checkout },
   { path: 'my-orders', component: MyOrders },
   { path: 'login', component: Login },
+  { path: 'subscription-blocked', component: SubscriptionBlocked },
   { path: 'track/:orderId', component: Tracking },
   { path: 'about', component: About },
   { path: 'contact', component: Contact },
+  {
+    path: 'admin/tenants',
+    component: AdminTenants,
+    canActivate: [authRoleGuard],
+    data: { roles: ['platform_admin'] },
+  },
   {
     path: 'admin/orders',
     component: AdminOrders,

@@ -1,0 +1,132 @@
+<main class="tenant-shell">
+  <section class="tenant-head">
+    <p class="kicker">Platform Console</p>
+    <h1>Tenant and Subscription Operations</h1>
+    <p>Create tenants, assign plans, and control operational subscription status.</p>
+  </section>
+
+  <section class="create-card">
+    <h2>Create Tenant</h2>
+    <div class="create-grid">
+      <label for="tenantIdInput">Tenant ID</label>
+      <input
+        id="tenantIdInput"
+        type="text"
+        [(ngModel)]="tenantIdInput"
+        placeholder="e.g. greenspoon-tenant-a" />
+
+      <label for="tenantNameInput">Tenant Name</label>
+      <input
+        id="tenantNameInput"
+        type="text"
+        [(ngModel)]="tenantNameInput"
+        placeholder="e.g. Green Spoon Tenant A" />
+
+      <label for="tenantPlanInput">Plan</label>
+      <select id="tenantPlanInput" [(ngModel)]="tenantPlanInput">
+        @for (plan of plans(); track plan.plan) {
+          <option [value]="plan.plan">{{ planLabel(plan.plan) }} - INR {{ plan.amount }}</option>
+        }
+      </select>
+
+      <label for="tenantStatusInput">Initial Status</label>
+      <select id="tenantStatusInput" [(ngModel)]="tenantStatusInput">
+        @for (status of statusOptions; track status) {
+          <option [value]="status">{{ statusLabel(status) }}</option>
+        }
+      </select>
+    </div>
+
+    <button type="button" class="primary-btn" [disabled]="busyCreate()" (click)="createTenant()">
+      {{ busyCreate() ? 'Creating...' : 'Create Tenant' }}
+    </button>
+  </section>
+
+  <section class="toolbar">
+    <button type="button" class="refresh-btn" (click)="refresh()">Refresh</button>
+  </section>
+
+  @if (errorMessage()) {
+    <section class="error-box">{{ errorMessage() }}</section>
+  }
+
+  @if (statusMessage()) {
+    <section class="success-box">{{ statusMessage() }}</section>
+  }
+
+  @if (loading()) {
+    <section class="placeholder">Loading tenants...</section>
+  } @else if (tenants().length === 0) {
+    <section class="placeholder">No tenants found.</section>
+  } @else {
+    <section class="tenant-grid">
+      @for (tenant of tenants(); track tenant.tenantId) {
+        <article class="tenant-card">
+          <div class="card-head">
+            <div>
+              <p class="tenant-id">{{ tenant.tenantId }}</p>
+              <h2>{{ tenant.name }}</h2>
+            </div>
+            <span class="status-chip">{{ statusLabel(draft(tenant.tenantId).status) }}</span>
+          </div>
+
+          <div class="meta-grid">
+            <p><strong>Created:</strong> {{ tenant.createdAt | date: 'medium' }}</p>
+            <p><strong>Updated:</strong> {{ tenant.updatedAt | date: 'mediumTime' }}</p>
+            @if (tenant.subscription) {
+              <p>
+                <strong>Current Plan:</strong>
+                {{ planLabel(tenant.subscription.plan) }} (INR {{ tenant.subscription.amount }})
+              </p>
+              <p>
+                <strong>Period End:</strong>
+                {{ tenant.subscription.currentPeriodEnd | date: 'medium' }}
+              </p>
+            } @else {
+              <p><strong>Subscription:</strong> Missing</p>
+            }
+          </div>
+
+          <div class="edit-grid">
+            <label [for]="'plan-' + tenant.tenantId">Plan</label>
+            <select [id]="'plan-' + tenant.tenantId" [(ngModel)]="draft(tenant.tenantId).plan">
+              @for (plan of plans(); track plan.plan) {
+                <option [value]="plan.plan">{{ planLabel(plan.plan) }}</option>
+              }
+            </select>
+
+            <label [for]="'status-' + tenant.tenantId">Status</label>
+            <select [id]="'status-' + tenant.tenantId" [(ngModel)]="draft(tenant.tenantId).status">
+              @for (status of statusOptions; track status) {
+                <option [value]="status">{{ statusLabel(status) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="actions">
+            <button
+              type="button"
+              [disabled]="busySaveTenant() === tenant.tenantId"
+              (click)="saveSubscription(tenant)">
+              {{ busySaveTenant() === tenant.tenantId ? 'Saving...' : 'Save Plan + Status' }}
+            </button>
+            <button
+              type="button"
+              class="danger-btn"
+              [disabled]="busySaveTenant() === tenant.tenantId"
+              (click)="setStatus(tenant, 'suspended')">
+              Suspend
+            </button>
+            <button
+              type="button"
+              class="success-btn"
+              [disabled]="busySaveTenant() === tenant.tenantId"
+              (click)="setStatus(tenant, 'active')">
+              Activate
+            </button>
+          </div>
+        </article>
+      }
+    </section>
+  }
+</main>

@@ -9,6 +9,7 @@ import { TrackingService } from '../services/tracking';
 import { OrderApiService } from '../services/order-api';
 import { OrderPaymentMethod } from '../models/order';
 import { DeliveryFeeMode } from '../models/order';
+import { AuthService } from '../services/auth';
 
 type PaymentMethod = OrderPaymentMethod;
 
@@ -49,7 +50,8 @@ export class Checkout {
     private readonly cart: CartService,
     private readonly payment: Payment,
     private readonly tracking: TrackingService,
-    private readonly orderApi: OrderApiService
+    private readonly orderApi: OrderApiService,
+    private readonly auth: AuthService
   ) {}
 
   items(): CartItem[] {
@@ -243,6 +245,7 @@ export class Checkout {
     try {
       const savedOrder = await this.orderApi.createOrder({
         orderId: orderReference,
+        tenantId: this.resolveTenantId(),
         customer: {
           name: this.customerName,
           phone: this.customerPhone,
@@ -315,5 +318,9 @@ export class Checkout {
 
   private generateDeliveryOtp(): string {
     return `${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+
+  private resolveTenantId(): string | undefined {
+    return this.auth.session()?.tenantId;
   }
 }

@@ -9,11 +9,248 @@ servers:
   - url: https://api.greenspoonfoods.com
     description: Production
 tags:
+  - name: Auth
+  - name: Tenants
   - name: Payments
   - name: Orders
   - name: Tracking
   - name: Notifications
 paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and issue JWT access token + refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Authenticated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRefreshRequest'
+      responses:
+        '200':
+          description: Refreshed access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRefreshResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and revoke refresh token
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLogoutRequest'
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /subscriptions/plans:
+    get:
+      tags: [Tenants]
+      summary: List available subscription plans
+      responses:
+        '200':
+          description: Plan catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionPlanCatalogItem'
+  /tenants:
+    get:
+      tags: [Tenants]
+      summary: List tenants with current subscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tenant list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantWithSubscription'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Tenants]
+      summary: Create tenant and initial subscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantCreateRequest'
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantWithSubscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Duplicate tenant id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tenants/{tenantId}/subscription:
+    get:
+      tags: [Tenants]
+      summary: Get tenant subscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: tenantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tenant subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSubscription'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Tenants]
+      summary: Replace tenant subscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: tenantId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantSubscriptionUpdateRequest'
+      responses:
+        '200':
+          description: Updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSubscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /tenants/{tenantId}/subscription/status:
+    patch:
+      tags: [Tenants]
+      summary: Update tenant subscription status
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: tenantId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantSubscriptionStatusUpdateRequest'
+      responses:
+        '200':
+          description: Updated subscription status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSubscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /payments/razorpay/order:
     post:
       tags: [Payments]
@@ -77,6 +314,8 @@ paths:
                 $ref: '#/components/schemas/OrderRecord'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
         '409':
           description: Duplicate order id
           content:
@@ -86,6 +325,8 @@ paths:
     get:
       tags: [Orders]
       summary: List orders
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: status
@@ -111,6 +352,10 @@ paths:
           schema:
             type: integer
             minimum: 0
+        - in: query
+          name: tenantId
+          schema:
+            type: string
       responses:
         '200':
           description: Orders list
@@ -120,6 +365,56 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrderRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /orders/customer/request-otp:
+    post:
+      tags: [Orders]
+      summary: Request OTP for customer self-service order lookup.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerLookupOtpRequest'
+      responses:
+        '200':
+          description: OTP request accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerLookupOtpResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /orders/customer/lookup:
+    post:
+      tags: [Orders]
+      summary: Lookup customer orders with phone + OTP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerOrderLookupRequest'
+      responses:
+        '200':
+          description: Matching orders for the verified customer.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /orders/{orderId}:
     get:
       tags: [Orders]
@@ -143,6 +438,8 @@ paths:
     patch:
       tags: [Orders]
       summary: Update order status
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: orderId
@@ -168,12 +465,20 @@ paths:
                 $ref: '#/components/schemas/OrderRecord'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
         '404':
           $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /orders/{orderId}/delivery-confirmation:
     post:
       tags: [Orders]
       summary: Confirm delivered order with OTP and fee collection details
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: orderId
@@ -195,8 +500,14 @@ paths:
                 $ref: '#/components/schemas/OrderRecord'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
         '404':
           $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /tracking/{orderId}:
     get:
       tags: [Tracking]
@@ -220,6 +531,8 @@ paths:
     post:
       tags: [Tracking]
       summary: Push rider location update
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: orderId
@@ -244,10 +557,18 @@ paths:
                   ok:
                     type: boolean
                     example: true
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /notifications/whatsapp/confirmation:
     post:
       tags: [Notifications]
       summary: Queue customer order confirmation WhatsApp message
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -263,7 +584,18 @@ paths:
                 $ref: '#/components/schemas/WhatsAppConfirmationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   responses:
     BadRequest:
       description: Invalid request payload
@@ -277,6 +609,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Authenticated but not allowed for this operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PaymentRequired:
+      description: Tenant subscription is inactive for operational actions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     InternalError:
       description: Internal server error
       content:
@@ -284,6 +634,190 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    AppRole:
+      type: string
+      enum:
+        - platform_admin
+        - restaurant_owner
+        - manager
+        - dispatch
+        - kitchen
+        - rider
+        - customer
+    AuthUser:
+      type: object
+      required: [userId, email, name, role, tenantId]
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/AppRole'
+        tenantId:
+          type: string
+    AuthLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    AuthRefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    AuthLogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+    AuthLoginResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn, refreshToken, user]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: string
+          example: 15m
+        refreshToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/AuthUser'
+    AuthRefreshResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn, user]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: string
+          example: 15m
+        user:
+          $ref: '#/components/schemas/AuthUser'
+    SubscriptionPlan:
+      type: string
+      enum: [monthly, quarterly, yearly]
+    SubscriptionStatus:
+      type: string
+      enum: [trial, active, past_due, suspended, cancelled]
+    SubscriptionPlanCatalogItem:
+      type: object
+      required: [plan, durationDays, amount, currency]
+      properties:
+        plan:
+          $ref: '#/components/schemas/SubscriptionPlan'
+        durationDays:
+          type: integer
+          minimum: 1
+        amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          enum: [INR]
+    Tenant:
+      type: object
+      required: [tenantId, name, createdAt, updatedAt]
+      properties:
+        tenantId:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: integer
+          format: int64
+        updatedAt:
+          type: integer
+          format: int64
+    TenantSubscription:
+      type: object
+      required:
+        - tenantId
+        - plan
+        - status
+        - amount
+        - currency
+        - startAt
+        - currentPeriodStart
+        - currentPeriodEnd
+        - updatedAt
+      properties:
+        tenantId:
+          type: string
+        plan:
+          $ref: '#/components/schemas/SubscriptionPlan'
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
+        amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          enum: [INR]
+        startAt:
+          type: integer
+          format: int64
+        currentPeriodStart:
+          type: integer
+          format: int64
+        currentPeriodEnd:
+          type: integer
+          format: int64
+        updatedAt:
+          type: integer
+          format: int64
+    TenantWithSubscription:
+      allOf:
+        - $ref: '#/components/schemas/Tenant'
+        - type: object
+          required: [subscription]
+          properties:
+            subscription:
+              nullable: true
+              allOf:
+                - $ref: '#/components/schemas/TenantSubscription'
+    TenantCreateRequest:
+      type: object
+      required: [tenantId, name]
+      properties:
+        tenantId:
+          type: string
+        name:
+          type: string
+        plan:
+          $ref: '#/components/schemas/SubscriptionPlan'
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
+    TenantSubscriptionUpdateRequest:
+      type: object
+      required: [plan, status]
+      properties:
+        plan:
+          $ref: '#/components/schemas/SubscriptionPlan'
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
+        startAt:
+          type: integer
+          format: int64
+    TenantSubscriptionStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
     CurrencyCode:
       type: string
       enum: [INR]
@@ -408,6 +942,8 @@ components:
       properties:
         orderId:
           type: string
+        tenantId:
+          type: string
         customer:
           $ref: '#/components/schemas/OrderCustomerInfo'
         address:
@@ -445,6 +981,36 @@ components:
             updatedAt:
               type: integer
               format: int64
+    CustomerLookupOtpRequest:
+      type: object
+      required: [phone]
+      properties:
+        phone:
+          type: string
+        tenantId:
+          type: string
+    CustomerLookupOtpResponse:
+      type: object
+      required: [requestId, expiresAt]
+      properties:
+        requestId:
+          type: string
+        expiresAt:
+          type: integer
+          format: int64
+        debugOtp:
+          type: string
+          description: Present only in debug mode.
+    CustomerOrderLookupRequest:
+      type: object
+      required: [phone, requestId, otpCode]
+      properties:
+        phone:
+          type: string
+        requestId:
+          type: string
+        otpCode:
+          type: string
     RazorpayOrderCreatePayload:
       type: object
       required: [orderReference, amount, currency]
@@ -517,6 +1083,7 @@ components:
       type: object
       required:
         - orderId
+        - tenantId
         - status
         - agentName
         - agentPhone
@@ -526,6 +1093,8 @@ components:
         - updatedAt
       properties:
         orderId:
+          type: string
+        tenantId:
           type: string
         status:
           type: string

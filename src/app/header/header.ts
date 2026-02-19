@@ -31,6 +31,10 @@ export class Header {
     return this.auth.hasAnyRole(['platform_admin', 'restaurant_owner', 'manager']);
   }
 
+  canAccessTenantOps(): boolean {
+    return this.auth.hasAnyRole(['platform_admin']);
+  }
+
   canAccessDispatch(): boolean {
     return this.auth.hasAnyRole([
       'platform_admin',
@@ -38,6 +42,14 @@ export class Header {
       'manager',
       'dispatch',
     ]);
+  }
+
+  showMyOrders(): boolean {
+    const session = this.auth.session();
+    if (!session) {
+      return true;
+    }
+    return session.role === 'customer';
   }
 
   currentUserName(): string {
@@ -50,7 +62,7 @@ export class Header {
   }
 
   async logout(): Promise<void> {
-    this.auth.logout();
+    await this.auth.logout();
     await this.router.navigate(['/']);
   }
 

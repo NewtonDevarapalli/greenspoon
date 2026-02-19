@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { Login } from './login';
+import { SubscriptionBlocked } from './subscription-blocked';
 
-describe('Login', () => {
-  let component: Login;
-  let fixture: ComponentFixture<Login>;
+describe('SubscriptionBlocked', () => {
+  let component: SubscriptionBlocked;
+  let fixture: ComponentFixture<SubscriptionBlocked>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Login],
+      imports: [SubscriptionBlocked],
       providers: [provideRouter([]), provideHttpClient()],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Login);
+    fixture = TestBed.createComponent(SubscriptionBlocked);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
