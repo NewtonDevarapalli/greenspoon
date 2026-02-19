@@ -10,6 +10,8 @@ import { RazorpayOrderCreatePayload } from '../models/order';
 import { RazorpayOrderResponse } from '../models/order';
 import { RazorpayVerifyPayload } from '../models/order';
 import { RazorpayVerifyResponse } from '../models/order';
+import { WhatsAppConfirmationRequest } from '../models/order';
+import { WhatsAppConfirmationResponse } from '../models/order';
 
 interface OrderApiAdapter {
   createOrder(payload: OrderCreatePayload): Promise<OrderRecord>;
@@ -22,6 +24,9 @@ interface OrderApiAdapter {
   verifyRazorpayPayment(
     payload: RazorpayVerifyPayload
   ): Promise<RazorpayVerifyResponse>;
+  queueWhatsAppConfirmation(
+    payload: WhatsAppConfirmationRequest
+  ): Promise<WhatsAppConfirmationResponse>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -124,6 +129,17 @@ export class LocalOrderApiService implements OrderApiAdapter {
       verified,
       paymentReference: payload.paymentId,
       message: verified ? 'Payment verified in local mode.' : 'Payment verification failed.',
+    };
+  }
+
+  async queueWhatsAppConfirmation(
+    payload: WhatsAppConfirmationRequest
+  ): Promise<WhatsAppConfirmationResponse> {
+    const fallbackId = `local-${payload.orderId}-${Date.now()}`;
+    return {
+      queued: true,
+      channel: 'whatsapp',
+      providerMessageId: fallbackId,
     };
   }
 
@@ -260,6 +276,17 @@ export class HttpOrderApiService implements OrderApiAdapter {
     );
   }
 
+  async queueWhatsAppConfirmation(
+    payload: WhatsAppConfirmationRequest
+  ): Promise<WhatsAppConfirmationResponse> {
+    return firstValueFrom(
+      this.http.post<WhatsAppConfirmationResponse>(
+        `${this.baseUrl}/notifications/whatsapp/confirmation`,
+        payload
+      )
+    );
+  }
+
   private isNotFound(error: unknown): boolean {
     return error instanceof HttpErrorResponse && error.status === 404;
   }
@@ -305,5 +332,11 @@ export class OrderApiService implements OrderApiAdapter {
     payload: RazorpayVerifyPayload
   ): Promise<RazorpayVerifyResponse> {
     return this.adapter.verifyRazorpayPayment(payload);
+  }
+
+  queueWhatsAppConfirmation(
+    payload: WhatsAppConfirmationRequest
+  ): Promise<WhatsAppConfirmationResponse> {
+    return this.adapter.queueWhatsAppConfirmation(payload);
   }
 }

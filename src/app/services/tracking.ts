@@ -54,11 +54,22 @@ export interface NewTrackingOrder {
   paymentMode: string;
 }
 
+export interface TrackingLocationUpdate {
+  lat: number;
+  lng: number;
+  status: DeliveryStatus;
+  etaMinutes: number;
+}
+
 type OrderSnapshot = Record<string, TrackingOrder>;
 
 interface TrackingApiAdapter {
   createOrderTracking(payload: NewTrackingOrder): Promise<TrackingOrder>;
   getOrder(orderId: string): Promise<TrackingOrder | null>;
+  updateTrackingLocation(
+    orderId: string,
+    payload: TrackingLocationUpdate
+  ): Promise<boolean>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -108,6 +119,61 @@ export class LocalTrackingService implements TrackingApiAdapter {
 
   async getOrder(orderId: string): Promise<TrackingOrder | null> {
     return this.orders[orderId] ?? null;
+  }
+
+  async updateTrackingLocation(
+    orderId: string,
+    payload: TrackingLocationUpdate
+  ): Promise<boolean> {
+    const existing = this.orders[orderId];
+    if (!existing) {
+      return false;
+    }
+
+    const now = Date.now();
+    const lastStatus = existing.events[existing.events.length - 1]?.status;
+    const nextEvents =
+      lastStatus === payload.status
+        ? existing.events
+        : [
+            ...existing.events,
+            {
+              status: payload.status,
+              label: this.statusLabel(payload.status),
+              time: now,
+            },
+          ];
+
+    const progressMap: Record<DeliveryStatus, number> = {
+      assigned: 0,
+      picked_up: 2,
+      on_the_way: 7,
+      nearby: 11,
+      delivered: 13,
+    };
+    const progressIndex = Math.min(
+      existing.route.length - 1,
+      progressMap[payload.status] ?? existing.progressIndex
+    );
+
+    this.orders[orderId] = {
+      ...existing,
+      status: payload.status,
+      etaMinutes: payload.etaMinutes,
+      current: { lat: payload.lat, lng: payload.lng },
+      progressIndex,
+      updatedAt: now,
+      events: nextEvents,
+    };
+    this.persist();
+
+    if (payload.status === 'delivered') {
+      this.stopTicker(orderId);
+    } else {
+      this.startTicker(orderId);
+    }
+
+    return true;
   }
 
   statusLabel(status: DeliveryStatus): string {
@@ -329,6 +395,26 @@ export class HttpTrackingService implements TrackingApiAdapter {
     }
   }
 
+  async updateTrackingLocation(
+    orderId: string,
+    payload: TrackingLocationUpdate
+  ): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ ok: boolean }>(
+          `${this.baseUrl}/tracking/${orderId}/location`,
+          payload
+        )
+      );
+      return Boolean(response.ok);
+    } catch (error) {
+      if (this.isNotFound(error)) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
   private mapHttpTracking(dto: HttpTrackingDto): TrackingOrder {
     const statusProgress: Record<DeliveryStatus, number> = {
       assigned: 1,
@@ -403,6 +489,13 @@ export class TrackingService {
 
   getOrder(orderId: string): Promise<TrackingOrder | null> {
     return this.adapter.getOrder(orderId);
+  }
+
+  updateTrackingLocation(
+    orderId: string,
+    payload: TrackingLocationUpdate
+  ): Promise<boolean> {
+    return this.adapter.updateTrackingLocation(orderId, payload);
   }
 
   watchOrder(

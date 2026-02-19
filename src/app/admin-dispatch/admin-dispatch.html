@@ -1,0 +1,104 @@
+<main class="dispatch-shell">
+  <section class="dispatch-head">
+    <p class="kicker">Dispatch Console</p>
+    <h1>Update Rider Location and Customer Notification</h1>
+    <p>Select an order, push tracking status, and queue WhatsApp confirmation logs.</p>
+  </section>
+
+  @if (errorMessage()) {
+    <section class="error-box">{{ errorMessage() }}</section>
+  }
+
+  @if (statusMessage()) {
+    <section class="success-box">{{ statusMessage() }}</section>
+  }
+
+  @if (loading()) {
+    <section class="placeholder">Loading dispatch data...</section>
+  } @else if (activeOrders().length === 0) {
+    <section class="placeholder">No active orders available.</section>
+  } @else {
+    <section class="dispatch-grid">
+      <article class="panel">
+        <h2>Select Order</h2>
+
+        <label for="orderSelect">Active Orders</label>
+        <select
+          id="orderSelect"
+          [ngModel]="selectedOrderId()"
+          (ngModelChange)="selectedOrderId.set($event); onOrderSelectionChange()">
+          @for (order of activeOrders(); track order.orderId) {
+            <option [value]="order.orderId">
+              {{ order.orderId }} - {{ order.customer.name }} - INR {{ order.totals.grandTotal }}
+            </option>
+          }
+        </select>
+
+        @if (selectedOrder()) {
+          <div class="order-info">
+            <p><strong>Customer:</strong> {{ selectedOrder()!.customer.name }}</p>
+            <p><strong>Phone:</strong> {{ selectedOrder()!.customer.phone }}</p>
+            <p><strong>Address:</strong> {{ selectedOrder()!.address.line1 }}, {{ selectedOrder()!.address.city }}</p>
+            <p><strong>Order Status:</strong> {{ selectedOrder()!.status }}</p>
+          </div>
+          <a class="track-link" [routerLink]="['/track', selectedOrder()!.orderId]">Open Customer Tracking Page</a>
+        }
+      </article>
+
+      <article class="panel">
+        <h2>Push Tracking Update</h2>
+
+        <div class="form-grid">
+          <label for="latInput">Latitude</label>
+          <input id="latInput" type="text" [(ngModel)]="latInput" placeholder="17.385000" />
+
+          <label for="lngInput">Longitude</label>
+          <input id="lngInput" type="text" [(ngModel)]="lngInput" placeholder="78.486700" />
+
+          <label for="etaInput">ETA Minutes</label>
+          <input id="etaInput" type="number" min="0" [(ngModel)]="etaInput" />
+
+          <label for="deliveryStatus">Delivery Status</label>
+          <select id="deliveryStatus" [(ngModel)]="deliveryStatus">
+            @for (status of deliveryStatuses; track status) {
+              <option [value]="status">{{ deliveryLabel(status) }}</option>
+            }
+          </select>
+        </div>
+
+        <button type="button" class="primary-btn" [disabled]="busyUpdate()" (click)="pushTrackingUpdate()">
+          @if (busyUpdate()) {
+            Updating...
+          } @else {
+            Push Tracking
+          }
+        </button>
+
+        @if (tracking()) {
+          <div class="tracking-preview">
+            <p><strong>Current:</strong> {{ tracking()!.current.lat }}, {{ tracking()!.current.lng }}</p>
+            <p><strong>Status:</strong> {{ deliveryLabel(tracking()!.status) }}</p>
+            <p><strong>ETA:</strong> {{ tracking()!.etaMinutes }} mins</p>
+            <p><strong>Updated:</strong> {{ tracking()!.updatedAt | date: 'mediumTime' }}</p>
+          </div>
+        }
+      </article>
+    </section>
+
+    <section class="panel notify-panel">
+      <h2>Customer WhatsApp Confirmation</h2>
+      <p>Queue a confirmation event after manual WhatsApp reply by operations staff.</p>
+      <button
+        type="button"
+        class="secondary-btn"
+        [disabled]="busyNotify() || !selectedOrder()"
+        (click)="queueWhatsAppConfirmation()">
+        @if (busyNotify()) {
+          Queueing...
+        } @else {
+          Queue WhatsApp Confirmation Log
+        }
+      </button>
+    </section>
+  }
+</main>

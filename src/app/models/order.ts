@@ -80,3 +80,16 @@ export interface RazorpayVerifyResponse {
   paymentReference: string;
   message?: string;
 }
+
+export interface WhatsAppConfirmationRequest {
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  message: string;
+}
+
+export interface WhatsAppConfirmationResponse {
+  queued: boolean;
+  channel: 'whatsapp';
+  providerMessageId?: string;
+}

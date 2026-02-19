@@ -7,6 +7,7 @@ import { About } from './about/about';
 import { Contact } from './contact/contact';
 import { Tracking } from './tracking/tracking';
 import { AdminOrders } from './admin-orders/admin-orders';
+import { AdminDispatch } from './admin-dispatch/admin-dispatch';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -17,4 +18,5 @@ export const routes: Routes = [
   { path: 'about', component: About },
   { path: 'contact', component: Contact },
   { path: 'admin/orders', component: AdminOrders },
+  { path: 'admin/dispatch', component: AdminDispatch },
 ];
