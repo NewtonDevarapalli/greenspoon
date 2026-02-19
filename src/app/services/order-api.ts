@@ -28,6 +28,14 @@ interface OrderApiAdapter {
 export class LocalOrderApiService implements OrderApiAdapter {
   private readonly storageKey = 'greenspoon-orders-v1';
   private readonly paymentOrdersKey = 'greenspoon-payment-orders-v1';
+  private readonly allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
+    created: ['confirmed', 'cancelled'],
+    confirmed: ['preparing', 'cancelled'],
+    preparing: ['out_for_delivery', 'cancelled'],
+    out_for_delivery: ['delivered'],
+    delivered: [],
+    cancelled: [],
+  };
 
   async createOrder(payload: OrderCreatePayload): Promise<OrderRecord> {
     const now = Date.now();
@@ -60,6 +68,12 @@ export class LocalOrderApiService implements OrderApiAdapter {
     const existing = orders[orderId];
     if (!existing) {
       return null;
+    }
+
+    if (!this.isValidTransition(existing.status, status)) {
+      throw new Error(
+        `Invalid status transition: ${existing.status} -> ${status}`
+      );
     }
 
     const updated: OrderRecord = {
@@ -167,6 +181,13 @@ export class LocalOrderApiService implements OrderApiAdapter {
       return;
     }
     localStorage.setItem(this.paymentOrdersKey, JSON.stringify(data));
+  }
+
+  private isValidTransition(current: OrderStatus, next: OrderStatus): boolean {
+    if (current === next) {
+      return true;
+    }
+    return this.allowedTransitions[current]?.includes(next) ?? false;
   }
 }
 

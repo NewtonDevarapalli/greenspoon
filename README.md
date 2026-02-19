@@ -6,6 +6,7 @@ Green Spoon is an Angular web app for healthy cloud-kitchen ordering with:
 - Razorpay payment flow
 - Manual WhatsApp payment + confirmation workflow
 - Customer order tracking page (`/track/:orderId`)
+- Admin kitchen order console (`/admin/orders`)
 
 ## Tech Stack
 

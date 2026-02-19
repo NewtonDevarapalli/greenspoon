@@ -6,14 +6,15 @@ import { Checkout } from './checkout/checkout';
 import { About } from './about/about';
 import { Contact } from './contact/contact';
 import { Tracking } from './tracking/tracking';
-
+import { AdminOrders } from './admin-orders/admin-orders';
 
 export const routes: Routes = [
-{ path: '', component: Home },
-{ path: 'menu', component: Menu },
-{ path: 'cart', component: Cart },
-{ path: 'checkout', component: Checkout },
-{ path: 'track/:orderId', component: Tracking },
-{ path: 'about', component: About },
-{ path: 'contact', component: Contact }
+  { path: '', component: Home },
+  { path: 'menu', component: Menu },
+  { path: 'cart', component: Cart },
+  { path: 'checkout', component: Checkout },
+  { path: 'track/:orderId', component: Tracking },
+  { path: 'about', component: About },
+  { path: 'contact', component: Contact },
+  { path: 'admin/orders', component: AdminOrders },
 ];
