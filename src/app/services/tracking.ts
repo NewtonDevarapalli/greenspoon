@@ -251,15 +251,17 @@ export class LocalTrackingService implements TrackingApiAdapter {
 
     if (this.orders[orderId].status === 'delivered') {
       this.stopTicker(orderId);
+      return;
+    }
+
+    if (nextIndex >= order.route.length - 1 && nextStatus === 'nearby') {
+      this.stopTicker(orderId);
     }
   }
 
   private resolveStatus(index: number, length: number): DeliveryStatus {
     if (index <= 1) {
       return 'picked_up';
-    }
-    if (index >= length - 1) {
-      return 'delivered';
     }
     if (index >= Math.floor(length * 0.75)) {
       return 'nearby';

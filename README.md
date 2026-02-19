@@ -5,7 +5,11 @@ Green Spoon is an Angular web app for healthy cloud-kitchen ordering with:
 - Cart and checkout
 - Razorpay payment flow
 - Manual WhatsApp payment + confirmation workflow
+- Delivery fee settlement modes (`prepaid`, `collect_at_drop`, `restaurant_settled`)
+- OTP-based delivery confirmation with collection capture in dispatch console
 - Customer order tracking page (`/track/:orderId`)
+- Customer self-service order lookup (`/my-orders`)
+- Role-based login for enterprise users (`/login`)
 - Admin kitchen order console (`/admin/orders`)
 - Dispatch console for rider updates and WhatsApp queue logs (`/admin/dispatch`)
 
@@ -101,6 +105,16 @@ This includes:
 - Razorpay API
 - Tracking API (recommended for production live tracking)
 - WhatsApp confirmation logging endpoint (optional)
+
+## Demo Login Accounts
+
+Use these accounts on `/login` for protected routes:
+
+- `admin@greenspoon.com` / `Admin@123` (platform admin)
+- `owner@greenspoon.com` / `Owner@123` (restaurant owner)
+- `manager@greenspoon.com` / `Manager@123` (kitchen manager)
+- `dispatch@greenspoon.com` / `Dispatch@123` (dispatch lead)
+- `customer@greenspoon.com` / `Customer@123` (customer)
 
 ## GitHub Pages Build
 

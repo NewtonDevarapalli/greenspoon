@@ -12,6 +12,9 @@ import { RazorpayVerifyPayload } from '../models/order';
 import { RazorpayVerifyResponse } from '../models/order';
 import { WhatsAppConfirmationRequest } from '../models/order';
 import { WhatsAppConfirmationResponse } from '../models/order';
+import { DeliveryConfirmationPayload } from '../models/order';
+import { DeliveryFeeMode } from '../models/order';
+import { DeliveryFeeSettlementStatus } from '../models/order';
 
 interface OrderApiAdapter {
   createOrder(payload: OrderCreatePayload): Promise<OrderRecord>;
@@ -27,6 +30,10 @@ interface OrderApiAdapter {
   queueWhatsAppConfirmation(
     payload: WhatsAppConfirmationRequest
   ): Promise<WhatsAppConfirmationResponse>;
+  confirmDelivery(
+    orderId: string,
+    payload: DeliveryConfirmationPayload
+  ): Promise<OrderRecord | null>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,16 +44,22 @@ export class LocalOrderApiService implements OrderApiAdapter {
     created: ['confirmed', 'cancelled'],
     confirmed: ['preparing', 'cancelled'],
     preparing: ['out_for_delivery', 'cancelled'],
-    out_for_delivery: ['delivered'],
+    out_for_delivery: [],
     delivered: [],
     cancelled: [],
   };
 
   async createOrder(payload: OrderCreatePayload): Promise<OrderRecord> {
     const now = Date.now();
+    const deliveryFeeMode: DeliveryFeeMode = payload.deliveryFeeMode ?? 'prepaid';
+    const deliveryFeeSettlementStatus =
+      payload.deliveryFeeSettlementStatus ??
+      this.defaultSettlementStatus(deliveryFeeMode);
     const order: OrderRecord = {
       ...payload,
       status: 'confirmed',
+      deliveryFeeMode,
+      deliveryFeeSettlementStatus,
       createdAt: now,
       updatedAt: now,
     };
@@ -143,6 +156,64 @@ export class LocalOrderApiService implements OrderApiAdapter {
     };
   }
 
+  async confirmDelivery(
+    orderId: string,
+    payload: DeliveryConfirmationPayload
+  ): Promise<OrderRecord | null> {
+    const orders = this.readAll();
+    const existing = orders[orderId];
+    if (!existing) {
+      return null;
+    }
+
+    const expectedOtp = existing.deliveryConfirmation?.expectedOtp;
+    const otpVerified = !expectedOtp || expectedOtp === payload.otpCode;
+    if (!otpVerified) {
+      throw new Error('Invalid OTP. Delivery cannot be confirmed.');
+    }
+
+    const now = Date.now();
+    const shouldCollect =
+      existing.deliveryFeeMode === 'collect_at_drop' && payload.collectDeliveryFee;
+    const collectedAmount = shouldCollect ? payload.collectionAmount ?? 0 : 0;
+
+    const nextSettlement: DeliveryFeeSettlementStatus = shouldCollect
+      ? 'collected'
+      : existing.deliveryFeeMode === 'restaurant_settled'
+      ? 'restaurant_settled'
+      : existing.deliveryFeeMode === 'collect_at_drop'
+      ? 'pending_collection'
+      : 'not_applicable';
+
+    const updated: OrderRecord = {
+      ...existing,
+      status: 'delivered',
+      updatedAt: now,
+      deliveryFeeSettlementStatus: nextSettlement,
+      deliveryFeeCollection: shouldCollect
+        ? {
+            amountCollected: collectedAmount,
+            method: payload.collectionMethod ?? 'cash',
+            collectedAt: now,
+            collectedBy: payload.confirmedBy,
+            notes: payload.collectionNotes || undefined,
+          }
+        : existing.deliveryFeeCollection,
+      deliveryConfirmation: {
+        ...existing.deliveryConfirmation,
+        receivedOtp: payload.otpCode,
+        otpVerified,
+        proofNote: payload.proofNote || undefined,
+        deliveredAt: now,
+        confirmedBy: payload.confirmedBy,
+      },
+    };
+
+    orders[orderId] = updated;
+    this.persistAll(orders);
+    return updated;
+  }
+
   private readAll(): Record<string, OrderRecord> {
     try {
       if (!this.canUseStorage()) {
@@ -204,6 +275,19 @@ export class LocalOrderApiService implements OrderApiAdapter {
       return true;
     }
     return this.allowedTransitions[current]?.includes(next) ?? false;
+  }
+
+  private defaultSettlementStatus(
+    mode: DeliveryFeeMode
+  ): DeliveryFeeSettlementStatus {
+    switch (mode) {
+      case 'collect_at_drop':
+        return 'pending_collection';
+      case 'restaurant_settled':
+        return 'restaurant_settled';
+      default:
+        return 'not_applicable';
+    }
   }
 }
 
@@ -287,6 +371,25 @@ export class HttpOrderApiService implements OrderApiAdapter {
     );
   }
 
+  async confirmDelivery(
+    orderId: string,
+    payload: DeliveryConfirmationPayload
+  ): Promise<OrderRecord | null> {
+    try {
+      return await firstValueFrom(
+        this.http.post<OrderRecord>(
+          `${this.baseUrl}/orders/${orderId}/delivery-confirmation`,
+          payload
+        )
+      );
+    } catch (error) {
+      if (this.isNotFound(error)) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   private isNotFound(error: unknown): boolean {
     return error instanceof HttpErrorResponse && error.status === 404;
   }
@@ -338,5 +441,12 @@ export class OrderApiService implements OrderApiAdapter {
     payload: WhatsAppConfirmationRequest
   ): Promise<WhatsAppConfirmationResponse> {
     return this.adapter.queueWhatsAppConfirmation(payload);
+  }
+
+  confirmDelivery(
+    orderId: string,
+    payload: DeliveryConfirmationPayload
+  ): Promise<OrderRecord | null> {
+    return this.adapter.confirmDelivery(orderId, payload);
   }
 }

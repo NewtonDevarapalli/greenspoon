@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { DeliveryCollectionMethod } from '../models/order';
 import { OrderRecord } from '../models/order';
 import { OrderApiService } from '../services/order-api';
 import { DeliveryStatus, TrackingOrder, TrackingService } from '../services/tracking';
@@ -18,6 +19,7 @@ export class AdminDispatch implements OnInit {
   readonly loading = signal(true);
   readonly busyUpdate = signal(false);
   readonly busyNotify = signal(false);
+  readonly busyConfirm = signal(false);
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
   readonly orders = signal<OrderRecord[]>([]);
@@ -28,6 +30,14 @@ export class AdminDispatch implements OnInit {
   lngInput = '';
   etaInput = '20';
   deliveryStatus: DeliveryStatus = 'on_the_way';
+
+  deliveryOtpInput = '';
+  proofNoteInput = '';
+  confirmedByInput = 'Dispatch Team';
+  collectDeliveryFee = false;
+  collectionAmountInput = '';
+  collectionMethod: DeliveryCollectionMethod = 'cash';
+  collectionNotesInput = '';
 
   readonly deliveryStatuses: DeliveryStatus[] = [
     'assigned',
@@ -143,6 +153,70 @@ export class AdminDispatch implements OnInit {
     }
   }
 
+  async confirmDelivery(): Promise<void> {
+    const order = this.selectedOrder();
+    if (!order) {
+      this.errorMessage.set('Select an order first.');
+      return;
+    }
+
+    if (!this.deliveryOtpInput.trim()) {
+      this.errorMessage.set('Delivery OTP is required.');
+      return;
+    }
+
+    let collectionAmount: number | undefined;
+    if (this.collectDeliveryFee) {
+      const parsed = Number.parseFloat(this.collectionAmountInput);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        this.errorMessage.set('Collection amount must be a non-negative number.');
+        return;
+      }
+      collectionAmount = parsed;
+    }
+
+    this.busyConfirm.set(true);
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    try {
+      const updatedOrder = await this.orderApi.confirmDelivery(order.orderId, {
+        otpCode: this.deliveryOtpInput.trim(),
+        proofNote: this.proofNoteInput.trim() || undefined,
+        confirmedBy: this.confirmedByInput.trim() || 'Dispatch Team',
+        collectDeliveryFee: this.collectDeliveryFee,
+        collectionAmount,
+        collectionMethod: this.collectDeliveryFee ? this.collectionMethod : undefined,
+        collectionNotes: this.collectDeliveryFee
+          ? this.collectionNotesInput.trim() || undefined
+          : undefined,
+      });
+
+      if (!updatedOrder) {
+        this.errorMessage.set('Order not found.');
+        return;
+      }
+
+      const fallbackTracking = this.tracking();
+      await this.trackingService.updateTrackingLocation(order.orderId, {
+        lat: Number.parseFloat(this.latInput || '0') || fallbackTracking?.current.lat || 17.385,
+        lng:
+          Number.parseFloat(this.lngInput || '0') || fallbackTracking?.current.lng || 78.4867,
+        status: 'delivered',
+        etaMinutes: 0,
+      });
+
+      this.orders.update((list) =>
+        list.map((item) => (item.orderId === updatedOrder.orderId ? updatedOrder : item))
+      );
+      await this.loadTrackingForSelectedOrder();
+      this.statusMessage.set('Delivery confirmed successfully.');
+    } catch (error) {
+      this.errorMessage.set(this.extractErrorMessage(error));
+    } finally {
+      this.busyConfirm.set(false);
+    }
+  }
+
   deliveryLabel(status: DeliveryStatus): string {
     switch (status) {
       case 'assigned':
@@ -171,7 +245,11 @@ export class AdminDispatch implements OnInit {
         (order) => order.status !== 'cancelled' && order.status !== 'delivered'
       );
 
-      if ((!this.selectedOrderId() || !active.some((o) => o.orderId === this.selectedOrderId())) && active.length > 0) {
+      if (
+        (!this.selectedOrderId() ||
+          !active.some((o) => o.orderId === this.selectedOrderId())) &&
+        active.length > 0
+      ) {
         this.selectedOrderId.set(active[0].orderId);
       }
 
@@ -209,6 +287,14 @@ export class AdminDispatch implements OnInit {
         this.etaInput = '20';
         this.deliveryStatus = 'on_the_way';
       }
+
+      const order = this.selectedOrder();
+      if (order) {
+        this.collectDeliveryFee = order.deliveryFeeMode === 'collect_at_drop';
+        this.collectionAmountInput = String(
+          order.totals.deliveryFeeDueAtDrop ?? order.totals.deliveryFee
+        );
+      }
     } catch (error) {
       this.errorMessage.set(this.extractErrorMessage(error));
     }
@@ -217,9 +303,14 @@ export class AdminDispatch implements OnInit {
   private buildCustomerMessage(order: OrderRecord): string {
     const eta = this.etaInput || '0';
     const status = this.deliveryLabel(this.deliveryStatus);
+    const deliveryDue = order.totals.deliveryFeeDueAtDrop ?? 0;
+    const dueText =
+      deliveryDue > 0
+        ? ` Please pay delivery charge INR ${deliveryDue} at drop location.`
+        : '';
     return (
       `Hi ${order.customer.name}, your Green Spoon order ${order.orderId} is currently ${status}. ` +
-      `Estimated delivery in ${eta} minutes.`
+      `Estimated delivery in ${eta} minutes.${dueText}`
     );
   }
 

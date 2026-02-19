@@ -60,7 +60,7 @@ export class AdminOrders implements OnInit {
     created: ['confirmed', 'cancelled'],
     confirmed: ['preparing', 'cancelled'],
     preparing: ['out_for_delivery', 'cancelled'],
-    out_for_delivery: ['delivered'],
+    out_for_delivery: [],
     delivered: [],
     cancelled: [],
   };

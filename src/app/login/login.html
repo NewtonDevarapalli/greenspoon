@@ -1,0 +1,44 @@
+<main class="login-shell">
+  <section class="login-card">
+    <p class="kicker">Enterprise Access</p>
+    <h1>Sign In</h1>
+    <p class="lead">Use your role account to access admin and dispatch consoles.</p>
+
+    @if (infoMessage) {
+      <p class="info">{{ infoMessage }}</p>
+    }
+
+    @if (errorMessage) {
+      <p class="error">{{ errorMessage }}</p>
+    }
+
+    <label for="emailInput">Email</label>
+    <input id="emailInput" type="email" [(ngModel)]="email" placeholder="you@greenspoon.com" />
+
+    <label for="passwordInput">Password</label>
+    <input id="passwordInput" type="password" [(ngModel)]="password" placeholder="Enter password" />
+
+    <button type="button" class="submit-btn" [disabled]="isSubmitting" (click)="submit()">
+      {{ isSubmitting ? 'Signing in...' : 'Sign In' }}
+    </button>
+
+    <div class="demo-users">
+      <p>Demo users</p>
+      <div class="demo-grid">
+        @for (account of demoAccounts; track account.email) {
+          <button
+            type="button"
+            class="demo-btn"
+            (click)="useDemo(account)"
+            [disabled]="isSubmitting"
+          >
+            {{ account.label }}
+          </button>
+        }
+      </div>
+      @for (account of demoAccounts; track account.email) {
+        <small>{{ account.email }} / {{ account.password }}</small>
+      }
+    </div>
+  </section>
+</main>

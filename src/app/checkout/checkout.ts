@@ -8,6 +8,7 @@ import { Payment } from '../services/payment';
 import { TrackingService } from '../services/tracking';
 import { OrderApiService } from '../services/order-api';
 import { OrderPaymentMethod } from '../models/order';
+import { DeliveryFeeMode } from '../models/order';
 
 type PaymentMethod = OrderPaymentMethod;
 
@@ -23,6 +24,7 @@ export class Checkout {
   isProcessing = false;
   paymentRequested = false;
   paymentMethod: PaymentMethod = 'razorpay';
+  deliveryFeeMode: DeliveryFeeMode = 'prepaid';
   statusMessage = '';
 
   customerName = '';
@@ -37,6 +39,8 @@ export class Checkout {
   confirmedOrderReference = '';
   confirmedTotal = 0;
   confirmedPaymentMode = '';
+  confirmedDeliveryDue = 0;
+  confirmedDeliveryOtp = '';
   trackedOrderId = '';
 
   private pendingOrderReference = '';
@@ -66,6 +70,20 @@ export class Checkout {
 
   total(): number {
     return this.subtotal() + this.deliveryFee() + this.tax();
+  }
+
+  payableNow(): number {
+    if (this.deliveryFeeMode === 'collect_at_drop') {
+      return this.subtotal() + this.tax();
+    }
+    if (this.deliveryFeeMode === 'restaurant_settled') {
+      return this.subtotal() + this.tax();
+    }
+    return this.total();
+  }
+
+  deliveryFeeDueAtDrop(): number {
+    return this.deliveryFeeMode === 'collect_at_drop' ? this.deliveryFee() : 0;
   }
 
   isFormValid(): boolean {
@@ -109,7 +127,7 @@ export class Checkout {
     try {
       const razorpayOrder = await this.orderApi.createRazorpayOrder({
         orderReference,
-        amount: this.total(),
+        amount: this.payableNow(),
         currency: 'INR',
       });
 
@@ -157,7 +175,7 @@ export class Checkout {
       this.customerPhone,
       this.customerName,
       this.pendingOrderReference,
-      this.total()
+      this.payableNow()
     );
 
     window.open(url, '_blank');
@@ -218,6 +236,9 @@ export class Checkout {
     const deliveryFee = this.deliveryFee();
     const tax = this.tax();
     const grandTotal = subtotal + deliveryFee + tax;
+    const payableNow = this.payableNow();
+    const deliveryFeeDueAtDrop = this.deliveryFeeDueAtDrop();
+    const deliveryOtp = this.generateDeliveryOtp();
 
     try {
       const savedOrder = await this.orderApi.createOrder({
@@ -238,15 +259,30 @@ export class Checkout {
           deliveryFee,
           tax,
           grandTotal,
+          payableNow,
+          deliveryFeeDueAtDrop,
         },
         paymentMethod,
         paymentReference,
+        deliveryFeeMode: this.deliveryFeeMode,
+        deliveryFeeSettlementStatus:
+          this.deliveryFeeMode === 'collect_at_drop'
+            ? 'pending_collection'
+            : this.deliveryFeeMode === 'restaurant_settled'
+            ? 'restaurant_settled'
+            : 'not_applicable',
+        deliveryConfirmation: {
+          expectedOtp: deliveryOtp,
+          otpVerified: false,
+        },
       });
 
       this.confirmedOrderReference = savedOrder.orderId;
       this.confirmedCustomerName = savedOrder.customer.name;
       this.confirmedCustomerPhone = savedOrder.customer.phone;
-      this.confirmedTotal = savedOrder.totals.grandTotal;
+      this.confirmedTotal = savedOrder.totals.payableNow ?? savedOrder.totals.grandTotal;
+      this.confirmedDeliveryDue = savedOrder.totals.deliveryFeeDueAtDrop ?? 0;
+      this.confirmedDeliveryOtp = savedOrder.deliveryConfirmation?.expectedOtp ?? deliveryOtp;
       this.confirmedPaymentMode =
         paymentMethod === 'razorpay' ? 'Razorpay' : 'WhatsApp Pay';
       this.trackedOrderId = savedOrder.orderId;
@@ -275,5 +311,9 @@ export class Checkout {
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 900 + 100);
     return `GS-${timestamp}-${random}`;
+  }
+
+  private generateDeliveryOtp(): string {
+    return `${Math.floor(1000 + Math.random() * 9000)}`;
   }
 }

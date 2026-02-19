@@ -170,6 +170,33 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+  /orders/{orderId}/delivery-confirmation:
+    post:
+      tags: [Orders]
+      summary: Confirm delivered order with OTP and fee collection details
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryConfirmationPayload'
+      responses:
+        '200':
+          description: Delivery confirmed and order closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tracking/{orderId}:
     get:
       tags: [Tracking]
@@ -272,6 +299,15 @@ components:
     OrderPaymentMethod:
       type: string
       enum: [razorpay, whatsapp]
+    DeliveryFeeMode:
+      type: string
+      enum: [prepaid, collect_at_drop, restaurant_settled]
+    DeliveryFeeSettlementStatus:
+      type: string
+      enum: [not_applicable, pending_collection, collected, restaurant_settled]
+    DeliveryCollectionMethod:
+      type: string
+      enum: [cash, upi]
     OrderCustomerInfo:
       type: object
       required: [name, phone]
@@ -304,6 +340,42 @@ components:
           type: number
         grandTotal:
           type: number
+        payableNow:
+          type: number
+        deliveryFeeDueAtDrop:
+          type: number
+    DeliveryFeeCollection:
+      type: object
+      required: [amountCollected, method, collectedAt, collectedBy]
+      properties:
+        amountCollected:
+          type: number
+        method:
+          $ref: '#/components/schemas/DeliveryCollectionMethod'
+        collectedAt:
+          type: integer
+          format: int64
+        collectedBy:
+          type: string
+        notes:
+          type: string
+    DeliveryConfirmation:
+      type: object
+      required: [otpVerified]
+      properties:
+        expectedOtp:
+          type: string
+        receivedOtp:
+          type: string
+        otpVerified:
+          type: boolean
+        proofNote:
+          type: string
+        deliveredAt:
+          type: integer
+          format: int64
+        confirmedBy:
+          type: string
     OrderItem:
       type: object
       required: [id, name, type, image, price, calories, quantity]
@@ -351,6 +423,14 @@ components:
           $ref: '#/components/schemas/OrderPaymentMethod'
         paymentReference:
           type: string
+        deliveryFeeMode:
+          $ref: '#/components/schemas/DeliveryFeeMode'
+        deliveryFeeSettlementStatus:
+          $ref: '#/components/schemas/DeliveryFeeSettlementStatus'
+        deliveryFeeCollection:
+          $ref: '#/components/schemas/DeliveryFeeCollection'
+        deliveryConfirmation:
+          $ref: '#/components/schemas/DeliveryConfirmation'
     OrderRecord:
       allOf:
         - $ref: '#/components/schemas/OrderCreatePayload'
@@ -479,6 +559,24 @@ components:
         etaMinutes:
           type: integer
           minimum: 0
+    DeliveryConfirmationPayload:
+      type: object
+      required: [otpCode, confirmedBy, collectDeliveryFee]
+      properties:
+        otpCode:
+          type: string
+        proofNote:
+          type: string
+        confirmedBy:
+          type: string
+        collectDeliveryFee:
+          type: boolean
+        collectionAmount:
+          type: number
+        collectionMethod:
+          $ref: '#/components/schemas/DeliveryCollectionMethod'
+        collectionNotes:
+          type: string
     WhatsAppConfirmationRequest:
       type: object
       required: [orderId, customerName, customerPhone, message]

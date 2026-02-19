@@ -49,6 +49,12 @@
   gap: 0.25rem;
 }
 
+.right-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 .main-nav a {
   text-decoration: none;
   font-family: 'Fredoka', sans-serif;
@@ -67,6 +73,55 @@
 .main-nav a.active {
   background: linear-gradient(120deg, #1f7a3f, #84cd3c);
   color: #ffffff;
+}
+
+.login-link,
+.logout-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(25, 99, 56, 0.2);
+  text-decoration: none;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 0.86rem;
+  padding: 0.4rem 0.78rem;
+  color: #1b6037;
+  background: #fff;
+}
+
+.logout-btn {
+  cursor: pointer;
+}
+
+.active-auth,
+.login-link:hover,
+.logout-btn:hover {
+  background: rgba(132, 205, 60, 0.18);
+}
+
+.user-chip {
+  border-radius: 12px;
+  border: 1px solid rgba(17, 82, 43, 0.2);
+  background: rgba(241, 250, 242, 0.92);
+  padding: 0.32rem 0.6rem;
+  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.user-chip strong,
+.user-chip small {
+  font-family: 'Fredoka', sans-serif;
+}
+
+.user-chip strong {
+  font-size: 0.78rem;
+  color: #114f2d;
+}
+
+.user-chip small {
+  font-size: 0.7rem;
+  color: #346148;
 }
 
 .cart-link {
@@ -118,7 +173,17 @@
     padding-bottom: 0.2rem;
   }
 
+  .right-actions {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
   .brand {
     margin-left: 0;
+  }
+
+  .user-chip {
+    min-width: 0;
   }
 }

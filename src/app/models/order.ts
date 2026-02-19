@@ -8,6 +8,13 @@ export type OrderStatus =
 
 export type OrderPaymentMethod = 'razorpay' | 'whatsapp';
 export type CurrencyCode = 'INR';
+export type DeliveryFeeMode = 'prepaid' | 'collect_at_drop' | 'restaurant_settled';
+export type DeliveryFeeSettlementStatus =
+  | 'not_applicable'
+  | 'pending_collection'
+  | 'collected'
+  | 'restaurant_settled';
+export type DeliveryCollectionMethod = 'cash' | 'upi';
 
 export interface OrderCustomerInfo {
   name: string;
@@ -26,6 +33,25 @@ export interface OrderTotals {
   deliveryFee: number;
   tax: number;
   grandTotal: number;
+  payableNow?: number;
+  deliveryFeeDueAtDrop?: number;
+}
+
+export interface DeliveryFeeCollection {
+  amountCollected: number;
+  method: DeliveryCollectionMethod;
+  collectedAt: number;
+  collectedBy: string;
+  notes?: string;
+}
+
+export interface DeliveryConfirmation {
+  expectedOtp?: string;
+  receivedOtp?: string;
+  otpVerified: boolean;
+  proofNote?: string;
+  deliveredAt?: number;
+  confirmedBy?: string;
 }
 
 export interface OrderItem {
@@ -46,6 +72,10 @@ export interface OrderCreatePayload {
   totals: OrderTotals;
   paymentMethod: OrderPaymentMethod;
   paymentReference: string;
+  deliveryFeeMode?: DeliveryFeeMode;
+  deliveryFeeSettlementStatus?: DeliveryFeeSettlementStatus;
+  deliveryFeeCollection?: DeliveryFeeCollection;
+  deliveryConfirmation?: DeliveryConfirmation;
 }
 
 export interface OrderRecord extends OrderCreatePayload {
@@ -92,4 +122,14 @@ export interface WhatsAppConfirmationResponse {
   queued: boolean;
   channel: 'whatsapp';
   providerMessageId?: string;
+}
+
+export interface DeliveryConfirmationPayload {
+  otpCode: string;
+  proofNote?: string;
+  confirmedBy: string;
+  collectDeliveryFee: boolean;
+  collectionAmount?: number;
+  collectionMethod?: DeliveryCollectionMethod;
+  collectionNotes?: string;
 }

@@ -8,15 +8,32 @@
     <nav class="main-nav" aria-label="Primary navigation">
       <a routerLink="/" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Home</a>
       <a routerLink="/menu" routerLinkActive="active">Menu</a>
+      <a routerLink="/my-orders" routerLinkActive="active">My Orders</a>
       <a routerLink="/about" routerLinkActive="active">About</a>
       <a routerLink="/contact" routerLinkActive="active">Contact</a>
-      <a routerLink="/admin/orders" routerLinkActive="active">Admin</a>
-      <a routerLink="/admin/dispatch" routerLinkActive="active">Dispatch</a>
+      @if (canAccessAdmin()) {
+        <a routerLink="/admin/orders" routerLinkActive="active">Admin</a>
+      }
+      @if (canAccessDispatch()) {
+        <a routerLink="/admin/dispatch" routerLinkActive="active">Dispatch</a>
+      }
     </nav>
 
-    <a class="cart-link" routerLink="/cart" aria-label="Open cart">
-      Cart
-      <span class="cart-count">{{ cartCount() }}</span>
-    </a>
+    <div class="right-actions">
+      @if (isAuthenticated()) {
+        <div class="user-chip" aria-label="Signed in user">
+          <strong>{{ currentUserName() }}</strong>
+          <small>{{ currentRoleLabel() }}</small>
+        </div>
+        <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+      } @else {
+        <a class="login-link" routerLink="/login" routerLinkActive="active-auth">Login</a>
+      }
+
+      <a class="cart-link" routerLink="/cart" aria-label="Open cart">
+        Cart
+        <span class="cart-count">{{ cartCount() }}</span>
+      </a>
+    </div>
   </div>
 </header>

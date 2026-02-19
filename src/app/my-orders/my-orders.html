@@ -1,0 +1,70 @@
+<main class="orders-shell">
+  <section class="orders-head">
+    <p class="kicker">My Orders</p>
+    <h1>Find and Track Your Green Spoon Orders</h1>
+    <p>Search using your phone number or your order reference.</p>
+  </section>
+
+  <section class="search-grid">
+    <article class="search-card">
+      <h2>Search By Phone</h2>
+      <label for="phoneInput">Phone Number</label>
+      <input id="phoneInput" type="tel" [(ngModel)]="phoneInput" placeholder="e.g. 9000010021" />
+      <button type="button" (click)="searchByPhone()" [disabled]="loading()">Find Orders</button>
+    </article>
+
+    <article class="search-card">
+      <h2>Search By Order ID</h2>
+      <label for="orderIdInput">Order ID</label>
+      <input id="orderIdInput" type="text" [(ngModel)]="orderIdInput" placeholder="e.g. GS-123456-111" />
+      <button type="button" (click)="searchByOrderId()" [disabled]="loading()">Find Order</button>
+    </article>
+  </section>
+
+  @if (errorMessage()) {
+    <section class="error-box">{{ errorMessage() }}</section>
+  }
+
+  @if (statusMessage()) {
+    <section class="status-box">{{ statusMessage() }}</section>
+  }
+
+  @if (loading()) {
+    <section class="placeholder">Searching orders...</section>
+  } @else if (foundOrders().length > 0) {
+    <section class="results-grid">
+      @for (order of foundOrders(); track order.orderId) {
+        <article class="order-card">
+          <div class="card-head">
+            <div>
+              <p class="order-id">Order {{ order.orderId }}</p>
+              <h2>{{ order.customer.name }}</h2>
+            </div>
+            <span class="status-chip">{{ statusLabel(order.status) }}</span>
+          </div>
+
+          <p class="meta">{{ order.createdAt | date: 'medium' }}</p>
+          <p class="meta">{{ order.address.line1 }}, {{ order.address.city }}</p>
+          <p class="meta">Total: INR {{ order.totals.grandTotal }}</p>
+
+          <div class="items-list">
+            @for (item of order.items; track item.id + '-' + item.quantity) {
+              <div class="item-row">
+                <img [src]="item.image" [alt]="item.name" />
+                <div>
+                  <p>{{ item.name }}</p>
+                  <small>{{ item.quantity }} x INR {{ item.price }}</small>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="actions">
+            <a [routerLink]="['/track', order.orderId]">Track Order</a>
+            <button type="button" (click)="reorder(order)">Reorder</button>
+          </div>
+        </article>
+      }
+    </section>
+  }
+</main>

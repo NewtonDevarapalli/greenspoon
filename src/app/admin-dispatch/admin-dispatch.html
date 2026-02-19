@@ -40,6 +40,11 @@
             <p><strong>Phone:</strong> {{ selectedOrder()!.customer.phone }}</p>
             <p><strong>Address:</strong> {{ selectedOrder()!.address.line1 }}, {{ selectedOrder()!.address.city }}</p>
             <p><strong>Order Status:</strong> {{ selectedOrder()!.status }}</p>
+            <p><strong>Delivery Fee Mode:</strong> {{ selectedOrder()!.deliveryFeeMode || 'prepaid' }}</p>
+            <p><strong>Settlement:</strong> {{ selectedOrder()!.deliveryFeeSettlementStatus || 'not_applicable' }}</p>
+            @if ((selectedOrder()!.totals.deliveryFeeDueAtDrop || 0) > 0) {
+              <p><strong>Due At Drop:</strong> INR {{ selectedOrder()!.totals.deliveryFeeDueAtDrop }}</p>
+            }
           </div>
           <a class="track-link" [routerLink]="['/track', selectedOrder()!.orderId]">Open Customer Tracking Page</a>
         }
@@ -97,6 +102,55 @@
           Queueing...
         } @else {
           Queue WhatsApp Confirmation Log
+        }
+      </button>
+    </section>
+
+    <section class="panel notify-panel">
+      <h2>Delivery Confirmation</h2>
+      <p>Confirm handoff with OTP and capture delivery fee collection if applicable.</p>
+
+      <div class="form-grid">
+        <label for="deliveryOtpInput">Delivery OTP</label>
+        <input id="deliveryOtpInput" type="text" [(ngModel)]="deliveryOtpInput" placeholder="Enter OTP shared by customer" />
+
+        <label for="confirmedByInput">Confirmed By</label>
+        <input id="confirmedByInput" type="text" [(ngModel)]="confirmedByInput" placeholder="Dispatch staff name" />
+
+        <label for="proofNoteInput">Proof Note</label>
+        <input id="proofNoteInput" type="text" [(ngModel)]="proofNoteInput" placeholder="Photo/signature/remarks" />
+      </div>
+
+      <label class="inline-check">
+        <input type="checkbox" [(ngModel)]="collectDeliveryFee" />
+        Collect delivery fee at drop
+      </label>
+
+      @if (collectDeliveryFee) {
+        <div class="form-grid">
+          <label for="collectionAmountInput">Amount Collected</label>
+          <input id="collectionAmountInput" type="number" min="0" [(ngModel)]="collectionAmountInput" />
+
+          <label for="collectionMethod">Collection Method</label>
+          <select id="collectionMethod" [(ngModel)]="collectionMethod">
+            <option value="cash">Cash</option>
+            <option value="upi">UPI</option>
+          </select>
+
+          <label for="collectionNotesInput">Collection Notes</label>
+          <input id="collectionNotesInput" type="text" [(ngModel)]="collectionNotesInput" placeholder="Optional notes" />
+        </div>
+      }
+
+      <button
+        type="button"
+        class="secondary-btn"
+        [disabled]="busyConfirm() || !selectedOrder()"
+        (click)="confirmDelivery()">
+        @if (busyConfirm()) {
+          Confirming...
+        } @else {
+          Confirm Delivery
         }
       </button>
     </section>

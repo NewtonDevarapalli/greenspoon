@@ -1,0 +1,232 @@
+.orders-shell {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: 1.2rem 1rem 3rem;
+  color: #1b412d;
+}
+
+.kicker {
+  margin: 0 0 0.35rem;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  color: #1f7a3f;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.orders-head h1 {
+  margin: 0;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+}
+
+.orders-head p {
+  margin: 0.45rem 0 0;
+  font-family: 'Fredoka', sans-serif;
+  color: #3e5f4d;
+}
+
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.search-card {
+  border-radius: 18px;
+  border: 1px solid rgba(31, 103, 58, 0.2);
+  background: #ffffff;
+  box-shadow: 0 16px 30px rgba(17, 64, 36, 0.08);
+  padding: 1rem;
+}
+
+.search-card h2 {
+  margin: 0 0 0.6rem;
+  font-family: 'Baloo 2', sans-serif;
+}
+
+label {
+  display: block;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(27, 95, 55, 0.24);
+  border-radius: 12px;
+  background: #f6faf7;
+  padding: 0.55rem 0.62rem;
+  font-family: 'Fredoka', sans-serif;
+  color: #1f4d33;
+}
+
+button {
+  margin-top: 0.75rem;
+  border: 0;
+  border-radius: 12px;
+  padding: 0.52rem 0.9rem;
+  background: #1f7a3f;
+  color: #fff;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-box,
+.status-box {
+  margin-top: 0.9rem;
+  border-radius: 12px;
+  padding: 0.62rem 0.8rem;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.error-box {
+  border: 1px solid rgba(167, 42, 42, 0.25);
+  background: #fff1f1;
+  color: #9f2424;
+}
+
+.status-box {
+  border: 1px solid rgba(30, 110, 61, 0.2);
+  background: #edf9ef;
+  color: #236940;
+}
+
+.placeholder {
+  margin-top: 1rem;
+  border-radius: 16px;
+  border: 1px dashed rgba(37, 84, 56, 0.25);
+  background: #f5fbf6;
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+}
+
+.results-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0.9rem;
+}
+
+.order-card {
+  border-radius: 18px;
+  border: 1px solid rgba(31, 103, 58, 0.2);
+  background: #ffffff;
+  box-shadow: 0 16px 30px rgba(17, 64, 36, 0.08);
+  padding: 1rem;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.order-id {
+  margin: 0;
+  font-family: 'Fredoka', sans-serif;
+  color: #2f7a4a;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.card-head h2 {
+  margin: 0.25rem 0 0;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 1.3rem;
+}
+
+.status-chip {
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  background: #ecf6ed;
+  color: #1a693a;
+  text-transform: capitalize;
+}
+
+.meta {
+  margin: 0.45rem 0 0;
+  font-family: 'Fredoka', sans-serif;
+  color: #456251;
+}
+
+.items-list {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.item-row img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.item-row p {
+  margin: 0;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+}
+
+.item-row small {
+  color: #4e6c5a;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.actions {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.actions a,
+.actions button {
+  margin: 0;
+  text-decoration: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.45rem 0.72rem;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.actions a {
+  background: #1f7a3f;
+  color: #fff;
+}
+
+.actions button {
+  background: #10452b;
+  color: #fff;
+}
+
+@media (max-width: 860px) {
+  .search-grid {
+    grid-template-columns: 1fr;
+  }
+}

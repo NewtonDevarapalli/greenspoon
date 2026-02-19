@@ -39,6 +39,17 @@ Payment method:
 - `razorpay`
 - `whatsapp`
 
+Delivery fee mode:
+- `prepaid`
+- `collect_at_drop`
+- `restaurant_settled`
+
+Delivery fee settlement status:
+- `not_applicable`
+- `pending_collection`
+- `collected`
+- `restaurant_settled`
+
 Currency:
 - `INR`
 
@@ -158,10 +169,18 @@ Request:
     "subtotal": 219,
     "deliveryFee": 39,
     "tax": 11,
-    "grandTotal": 269
+    "grandTotal": 269,
+    "payableNow": 230,
+    "deliveryFeeDueAtDrop": 39
   },
   "paymentMethod": "razorpay",
-  "paymentReference": "pay_Q1abcd1234"
+  "paymentReference": "pay_Q1abcd1234",
+  "deliveryFeeMode": "collect_at_drop",
+  "deliveryFeeSettlementStatus": "pending_collection",
+  "deliveryConfirmation": {
+    "expectedOtp": "4321",
+    "otpVerified": false
+  }
 }
 ```
 
@@ -173,6 +192,8 @@ Validation:
 - `totals.grandTotal`: required, number
 - `paymentMethod`: `razorpay` or `whatsapp`
 - `paymentReference`: required
+- `deliveryFeeMode`: optional, defaults to `prepaid`
+- `deliveryFeeSettlementStatus`: optional, backend can default by mode
 
 Response `201`:
 
@@ -204,10 +225,18 @@ Response `201`:
     "subtotal": 219,
     "deliveryFee": 39,
     "tax": 11,
-    "grandTotal": 269
+    "grandTotal": 269,
+    "payableNow": 230,
+    "deliveryFeeDueAtDrop": 39
   },
   "paymentMethod": "razorpay",
   "paymentReference": "pay_Q1abcd1234",
+  "deliveryFeeMode": "collect_at_drop",
+  "deliveryFeeSettlementStatus": "pending_collection",
+  "deliveryConfirmation": {
+    "expectedOtp": "4321",
+    "otpVerified": false
+  },
   "status": "confirmed",
   "createdAt": 1739965000000,
   "updatedAt": 1739965000000
@@ -261,12 +290,39 @@ Request:
 Allowed transitions:
 - `confirmed -> preparing`
 - `preparing -> out_for_delivery`
-- `out_for_delivery -> delivered`
 - `confirmed|preparing -> cancelled`
+
+`delivered` status should be set via:
+- `POST /orders/:orderId/delivery-confirmation` (OTP + proof + optional fee collection)
 
 Response `200`: updated order record  
 Response `400`: invalid transition  
 Response `404`: order not found
+
+### 4.5 Confirm Delivered Order
+`POST /orders/:orderId/delivery-confirmation`
+
+Use this for OTP verification and delivery fee collection capture.
+
+Request:
+
+```json
+{
+  "otpCode": "4321",
+  "proofNote": "Doorstep handoff and signature received",
+  "confirmedBy": "Dispatch Team",
+  "collectDeliveryFee": true,
+  "collectionAmount": 39,
+  "collectionMethod": "cash",
+  "collectionNotes": "Exact cash received"
+}
+```
+
+Response `200`: updated order record with:
+- `status = delivered`
+- `deliveryConfirmation.otpVerified = true`
+- updated `deliveryFeeSettlementStatus`
+- optional `deliveryFeeCollection` block
 
 ## 5) Tracking Endpoints (Recommended for Real Live Tracking)
 

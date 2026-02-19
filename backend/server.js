@@ -34,8 +34,19 @@ const DELIVERY_STATUSES = new Set([
 const ORDER_STATUS_TRANSITIONS = {
   confirmed: ['preparing', 'cancelled'],
   preparing: ['out_for_delivery', 'cancelled'],
-  out_for_delivery: ['delivered'],
+  out_for_delivery: [],
 };
+const DELIVERY_FEE_MODES = new Set([
+  'prepaid',
+  'collect_at_drop',
+  'restaurant_settled',
+]);
+const DELIVERY_SETTLEMENT_STATUSES = new Set([
+  'not_applicable',
+  'pending_collection',
+  'collected',
+  'restaurant_settled',
+]);
 
 app.use(cors({ origin: corsOrigin === '*' ? true : corsOrigin }));
 app.use(express.json({ limit: '2mb' }));
@@ -138,9 +149,19 @@ app.post('/orders', (req, res) => {
   }
 
   const now = Date.now();
+  const deliveryFeeMode = payload.deliveryFeeMode || 'prepaid';
+  const deliveryFeeSettlementStatus =
+    payload.deliveryFeeSettlementStatus || defaultSettlementStatus(deliveryFeeMode);
   const order = {
     ...payload,
     status: 'confirmed',
+    deliveryFeeMode,
+    deliveryFeeSettlementStatus,
+    deliveryConfirmation: {
+      expectedOtp: payload.deliveryConfirmation?.expectedOtp || '',
+      otpVerified: Boolean(payload.deliveryConfirmation?.otpVerified),
+      proofNote: payload.deliveryConfirmation?.proofNote || undefined,
+    },
     createdAt: now,
     updatedAt: now,
   };
@@ -216,6 +237,123 @@ app.patch('/orders/:orderId/status', (req, res) => {
   persistOrders();
 
   upsertTrackingFromOrderStatus(updated);
+
+  return res.status(200).json(updated);
+});
+
+app.post('/orders/:orderId/delivery-confirmation', (req, res) => {
+  const orderId = req.params.orderId;
+  const order = state.orders[orderId];
+  if (!order) {
+    return sendError(res, 404, 'NOT_FOUND', 'Order not found.');
+  }
+
+  const {
+    otpCode,
+    proofNote,
+    confirmedBy,
+    collectDeliveryFee,
+    collectionAmount,
+    collectionMethod,
+    collectionNotes,
+  } = req.body || {};
+
+  if (!isNonEmptyString(otpCode)) {
+    return sendError(res, 400, 'INVALID_PAYLOAD', 'otpCode is required.');
+  }
+  if (!isNonEmptyString(confirmedBy)) {
+    return sendError(res, 400, 'INVALID_PAYLOAD', 'confirmedBy is required.');
+  }
+
+  const expectedOtp = order.deliveryConfirmation?.expectedOtp;
+  const otpVerified = !isNonEmptyString(expectedOtp) || expectedOtp === otpCode;
+  if (!otpVerified) {
+    return sendError(res, 400, 'INVALID_OTP', 'Invalid delivery OTP.');
+  }
+
+  const now = Date.now();
+  let nextSettlement = order.deliveryFeeSettlementStatus || defaultSettlementStatus(order.deliveryFeeMode);
+  let deliveryFeeCollection = order.deliveryFeeCollection;
+
+  if (order.deliveryFeeMode === 'collect_at_drop') {
+    if (collectDeliveryFee) {
+      const amount = Number(collectionAmount);
+      if (!Number.isFinite(amount) || amount < 0) {
+        return sendError(
+          res,
+          400,
+          'INVALID_PAYLOAD',
+          'collectionAmount must be a non-negative number.'
+        );
+      }
+      if (!['cash', 'upi'].includes(collectionMethod)) {
+        return sendError(
+          res,
+          400,
+          'INVALID_PAYLOAD',
+          'collectionMethod must be cash or upi.'
+        );
+      }
+
+      nextSettlement = 'collected';
+      deliveryFeeCollection = {
+        amountCollected: amount,
+        method: collectionMethod,
+        collectedAt: now,
+        collectedBy: confirmedBy,
+        notes: isNonEmptyString(collectionNotes) ? collectionNotes : undefined,
+      };
+    } else {
+      nextSettlement = 'pending_collection';
+    }
+  } else if (order.deliveryFeeMode === 'restaurant_settled') {
+    nextSettlement = 'restaurant_settled';
+  } else {
+    nextSettlement = 'not_applicable';
+  }
+
+  const updated = {
+    ...order,
+    status: 'delivered',
+    deliveryFeeSettlementStatus: nextSettlement,
+    deliveryFeeCollection,
+    deliveryConfirmation: {
+      ...order.deliveryConfirmation,
+      receivedOtp: otpCode,
+      otpVerified: true,
+      proofNote: isNonEmptyString(proofNote) ? proofNote : undefined,
+      deliveredAt: now,
+      confirmedBy,
+    },
+    updatedAt: now,
+  };
+
+  state.orders[orderId] = updated;
+  persistOrders();
+
+  const tracking = state.tracking[orderId];
+  if (tracking) {
+    const lastStatus = tracking.events[tracking.events.length - 1]?.status;
+    const events =
+      lastStatus === 'delivered'
+        ? tracking.events
+        : [
+            ...tracking.events,
+            {
+              status: 'delivered',
+              label: deliveryStatusLabel('delivered'),
+              time: now,
+            },
+          ];
+    state.tracking[orderId] = {
+      ...tracking,
+      status: 'delivered',
+      etaMinutes: 0,
+      events,
+      updatedAt: now,
+    };
+    persistTracking();
+  }
 
   return res.status(200).json(updated);
 });
@@ -329,6 +467,18 @@ function validateOrderPayload(payload) {
   }
   if (!payload.totals || !isPositiveOrZeroNumber(payload.totals.grandTotal)) {
     return { ok: false, message: 'totals.grandTotal is required.' };
+  }
+  if (payload.deliveryFeeMode && !DELIVERY_FEE_MODES.has(payload.deliveryFeeMode)) {
+    return {
+      ok: false,
+      message: 'deliveryFeeMode must be prepaid, collect_at_drop, or restaurant_settled.',
+    };
+  }
+  if (
+    payload.deliveryFeeSettlementStatus &&
+    !DELIVERY_SETTLEMENT_STATUSES.has(payload.deliveryFeeSettlementStatus)
+  ) {
+    return { ok: false, message: 'Invalid deliveryFeeSettlementStatus.' };
   }
   if (!['razorpay', 'whatsapp'].includes(payload.paymentMethod)) {
     return { ok: false, message: 'paymentMethod must be razorpay or whatsapp.' };
@@ -520,6 +670,16 @@ function ensureDir(dirPath) {
   }
 }
 
+function defaultSettlementStatus(mode) {
+  if (mode === 'collect_at_drop') {
+    return 'pending_collection';
+  }
+  if (mode === 'restaurant_settled') {
+    return 'restaurant_settled';
+  }
+  return 'not_applicable';
+}
+
 function startTrackingSimulation() {
   setInterval(() => {
     let hasTrackingChanges = false;
@@ -593,7 +753,7 @@ function resolveSimulatedStatus(currentStatus, etaMinutes) {
     return etaMinutes <= 8 ? 'nearby' : 'on_the_way';
   }
   if (currentStatus === 'nearby') {
-    return etaMinutes <= 0 ? 'delivered' : 'nearby';
+    return 'nearby';
   }
   return currentStatus;
 }

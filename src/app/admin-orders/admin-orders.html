@@ -56,6 +56,9 @@
             <p><strong>City:</strong> {{ order.address.city }}</p>
             <p><strong>Payment:</strong> {{ paymentLabel(order.paymentMethod) }}</p>
             <p><strong>Total:</strong> INR {{ order.totals.grandTotal }}</p>
+            <p><strong>Pay Now:</strong> INR {{ order.totals.payableNow ?? order.totals.grandTotal }}</p>
+            <p><strong>Fee Mode:</strong> {{ order.deliveryFeeMode || 'prepaid' }}</p>
+            <p><strong>Settlement:</strong> {{ order.deliveryFeeSettlementStatus || 'not_applicable' }}</p>
             <p><strong>Placed:</strong> {{ order.createdAt | date: 'medium' }}</p>
             <p><strong>Updated:</strong> {{ order.updatedAt | date: 'mediumTime' }}</p>
           </div>

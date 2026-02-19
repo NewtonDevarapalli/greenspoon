@@ -54,6 +54,17 @@ label {
   margin: 0.55rem 0 0.28rem;
 }
 
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.inline-check input {
+  width: auto;
+}
+
 select,
 input {
   width: 100%;

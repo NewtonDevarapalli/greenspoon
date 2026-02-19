@@ -18,7 +18,11 @@
           <p class="label">ORDER RECEIVED</p>
           <h3>{{ confirmedCustomerName }}</h3>
           <p>Ref: {{ confirmedOrderReference }}</p>
-          <p>Total: INR {{ confirmedTotal }}</p>
+          <p>Paid Now: INR {{ confirmedTotal }}</p>
+          @if (confirmedDeliveryDue > 0) {
+            <p>Delivery Due At Drop: INR {{ confirmedDeliveryDue }}</p>
+          }
+          <p>Delivery OTP: <strong>{{ confirmedDeliveryOtp }}</strong></p>
           <p>Thank you for ordering from Green Spoon.</p>
         </div>
       </article>
@@ -93,7 +97,28 @@
         <div class="line"><span>Subtotal</span><strong>INR {{ subtotal() }}</strong></div>
         <div class="line"><span>Delivery</span><strong>INR {{ deliveryFee() }}</strong></div>
         <div class="line"><span>Tax (5%)</span><strong>INR {{ tax() }}</strong></div>
-        <div class="line total"><span>Total Payable</span><strong>INR {{ total() }}</strong></div>
+        <div class="line"><span>Order Total</span><strong>INR {{ total() }}</strong></div>
+
+        <div class="payment-methods">
+          <p>Delivery Fee Settlement</p>
+          <label>
+            <input type="radio" name="deliveryFeeMode" value="prepaid" [(ngModel)]="deliveryFeeMode" />
+            Customer prepays delivery fee
+          </label>
+          <label>
+            <input type="radio" name="deliveryFeeMode" value="collect_at_drop" [(ngModel)]="deliveryFeeMode" />
+            Customer pays delivery fee at location
+          </label>
+          <label>
+            <input type="radio" name="deliveryFeeMode" value="restaurant_settled" [(ngModel)]="deliveryFeeMode" />
+            Restaurant settles delivery fee directly
+          </label>
+        </div>
+
+        <div class="line total"><span>Pay Now</span><strong>INR {{ payableNow() }}</strong></div>
+        @if (deliveryFeeDueAtDrop() > 0) {
+          <div class="line"><span>Pay At Drop</span><strong>INR {{ deliveryFeeDueAtDrop() }}</strong></div>
+        }
 
         <div class="payment-methods">
           <p>Payment Method</p>
