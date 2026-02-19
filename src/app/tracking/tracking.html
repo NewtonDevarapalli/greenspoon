@@ -1,0 +1,73 @@
+<main class="tracking-shell">
+  <section class="tracking-head">
+    <p class="kicker">Live Tracking</p>
+    <h1>Track Your Delivery Agent In Real Time</h1>
+  </section>
+
+  @if (!order()) {
+    <section class="missing-order">
+      <h2>Tracking not available</h2>
+      <p>We could not find this order tracking link.</p>
+      <a routerLink="/menu">Go To Menu</a>
+    </section>
+  } @else {
+    <section class="tracking-grid">
+      <article class="tracking-card">
+        <p class="order-id">Order {{ order()!.orderId }}</p>
+        <h2>{{ statusLabel(order()!) }}</h2>
+        <p class="eta">
+          ETA:
+          @if (order()!.status === 'delivered') {
+            <strong>Delivered</strong>
+          } @else {
+            <strong>{{ order()!.etaMinutes }} mins</strong>
+          }
+        </p>
+
+        <div class="progress-wrap" aria-label="Delivery progress">
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="progress(order()!)"></div>
+          </div>
+          <span>{{ progress(order()!) }}%</span>
+        </div>
+
+        <div class="agent-card">
+          <h3>Delivery Agent</h3>
+          <p>{{ order()!.agentName }}</p>
+          <p>{{ order()!.agentPhone }}</p>
+        </div>
+
+        <div class="location-card">
+          <h3>Current Location</h3>
+          <p>Lat: {{ order()!.current.lat }}</p>
+          <p>Lng: {{ order()!.current.lng }}</p>
+          <p>Last updated: {{ order()!.updatedAt | date: 'mediumTime' }}</p>
+        </div>
+      </article>
+
+      <article class="map-card">
+        <h3>Live Rider Map</h3>
+        @if (mapUrl()) {
+          <iframe
+            [src]="mapUrl()!"
+            title="Delivery map"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"></iframe>
+        }
+
+        <div class="timeline">
+          <h3>Tracking Timeline</h3>
+          @for (event of order()!.events; track event.time) {
+            <div class="timeline-row">
+              <span class="dot"></span>
+              <div>
+                <p>{{ event.label }}</p>
+                <small>{{ event.time | date: 'shortTime' }}</small>
+              </div>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+  }
+</main>

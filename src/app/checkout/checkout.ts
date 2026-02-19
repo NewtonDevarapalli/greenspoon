@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { CartService } from '../services/cart';
 import { CartItem } from '../services/cart';
 import { Payment } from '../services/payment';
+import { TrackingService } from '../services/tracking';
 
 type PaymentMethod = 'razorpay' | 'whatsapp';
 
@@ -34,12 +35,14 @@ export class Checkout {
   confirmedOrderReference = '';
   confirmedTotal = 0;
   confirmedPaymentMode = '';
+  trackedOrderId = '';
 
   private pendingOrderReference = '';
 
   constructor(
     private readonly cart: CartService,
-    private readonly payment: Payment
+    private readonly payment: Payment,
+    private readonly tracking: TrackingService
   ) {}
 
   items(): CartItem[] {
@@ -174,6 +177,18 @@ export class Checkout {
     this.confirmedCustomerPhone = this.customerPhone;
     this.confirmedTotal = this.total();
     this.confirmedPaymentMode = paymentMode;
+    this.trackedOrderId = orderReference;
+
+    this.tracking.createOrderTracking({
+      orderId: orderReference,
+      customerName: this.customerName,
+      customerPhone: this.customerPhone,
+      addressLine: this.addressLine,
+      city: this.city,
+      notes: this.notes,
+      total: this.confirmedTotal,
+      paymentMode: paymentMode,
+    });
 
     this.orderPlaced = true;
     this.paymentRequested = false;

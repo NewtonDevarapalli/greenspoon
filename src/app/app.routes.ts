@@ -5,6 +5,7 @@ import { Cart } from './cart/cart';
 import { Checkout } from './checkout/checkout';
 import { About } from './about/about';
 import { Contact } from './contact/contact';
+import { Tracking } from './tracking/tracking';
 
 
 export const routes: Routes = [
@@ -12,6 +13,7 @@ export const routes: Routes = [
 { path: 'menu', component: Menu },
 { path: 'cart', component: Cart },
 { path: 'checkout', component: Checkout },
+{ path: 'track/:orderId', component: Tracking },
 { path: 'about', component: About },
 { path: 'contact', component: Contact }
 ];
