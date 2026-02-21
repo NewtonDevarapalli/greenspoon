@@ -33,6 +33,7 @@ interface AuthRefreshResponse {
   accessToken: string;
   tokenType?: string;
   expiresIn?: string;
+  refreshToken?: string;
   user: AuthUserDto;
 }
 
@@ -248,7 +249,7 @@ export class AuthService {
         ...this.mapUser(response.user),
         loginAt: Date.now(),
         accessToken: response.accessToken,
-        refreshToken,
+        refreshToken: response.refreshToken ?? refreshToken,
         tokenType: response.tokenType ?? current?.tokenType ?? 'Bearer',
         expiresIn: response.expiresIn ?? current?.expiresIn ?? '',
         authMode: 'http',
@@ -342,7 +343,10 @@ export class AuthService {
 
   private extractHttpErrorMessage(error: unknown, fallback: string): string {
     if (typeof error === 'object' && error !== null) {
-      const maybeError = error as { error?: { message?: string } };
+      const maybeError = error as { status?: number; error?: { message?: string } };
+      if (maybeError.status === 0) {
+        return 'Cannot reach auth server. Start backend on http://localhost:3000 and open app at http://localhost:4200.';
+      }
       if (isNonEmptyString(maybeError.error?.message)) {
         return maybeError.error.message;
       }

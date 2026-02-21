@@ -12,6 +12,7 @@ Green Spoon is an Angular web app for healthy cloud-kitchen ordering with:
 - Role-based login for enterprise users (`/login`)
 - Backend JWT auth + RBAC for admin/dispatch APIs
 - Tenant subscription module (monthly/quarterly/yearly) with operational enforcement
+- Master data admin console for users, restaurants, and menu (`/admin/master-data`)
 - Admin kitchen order console (`/admin/orders`)
 - Dispatch console for rider updates and WhatsApp queue logs (`/admin/dispatch`)
 
@@ -34,6 +35,7 @@ npm run backend:install
 Configure backend environment (`backend/.env`):
 - set `DATABASE_URL` to your PostgreSQL instance
 - keep JWT/Razorpay values as needed
+- for production baseline, copy from `backend/.env.production.example`
 
 Initialize Prisma (first run):
 
@@ -155,4 +157,25 @@ Then publish `dist/greenspoonfoods/browser`.
 
 ```bash
 npm test
+npm run backend:test
 ```
+
+Monitoring pack (Grafana dashboard + Prometheus alerts):
+
+`ops/monitoring/`
+
+Log shipping pack (Fluent Bit + Vector examples):
+
+`ops/logging/`
+
+Go-live checklist:
+
+`docs/production-checklist.md`
+
+Seed password rotation (post-seed hardening):
+
+`npm run backend:rotate-seed-passwords`
+
+One-shot production bootstrap (PowerShell):
+
+`npm run ops:bootstrap:prod`

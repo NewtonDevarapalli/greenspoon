@@ -1,0 +1,24 @@
+services:
+  fluent-bit:
+    image: fluent/fluent-bit:3.1.10
+    container_name: greenspoon-fluent-bit
+    profiles: ['fluent-bit']
+    environment:
+      - DATADOG_API_KEY=${DATADOG_API_KEY}
+    volumes:
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ${BACKEND_LOG_DIR:-/var/log/greenspoon}:/var/log/greenspoon:ro
+    command: ['/fluent-bit/bin/fluent-bit', '-c', '/fluent-bit/etc/fluent-bit.conf']
+    restart: unless-stopped
+
+  vector:
+    image: timberio/vector:0.41.1-debian
+    container_name: greenspoon-vector
+    profiles: ['vector']
+    environment:
+      - DATADOG_API_KEY=${DATADOG_API_KEY}
+    volumes:
+      - ./vector.toml:/etc/vector/vector.toml:ro
+      - ${BACKEND_LOG_DIR:-/var/log/greenspoon}:/var/log/greenspoon:ro
+    command: ['--config', '/etc/vector/vector.toml']
+    restart: unless-stopped

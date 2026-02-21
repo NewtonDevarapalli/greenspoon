@@ -10,9 +10,12 @@
     "backend:install": "npm --prefix backend install",
     "backend:start": "npm --prefix backend start",
     "backend:dev": "npm --prefix backend run dev",
+    "backend:test": "npm --prefix backend test",
     "backend:db:migrate": "npm --prefix backend run prisma:migrate",
     "backend:db:generate": "npm --prefix backend run prisma:generate",
-    "backend:db:seed": "npm --prefix backend run prisma:seed"
+    "backend:db:seed": "npm --prefix backend run prisma:seed",
+    "backend:rotate-seed-passwords": "npm --prefix backend run rotate:seed-passwords",
+    "ops:bootstrap:prod": "powershell -ExecutionPolicy Bypass -File ops/deploy/bootstrap-production.ps1"
   },
   "prettier": {
     "printWidth": 100,

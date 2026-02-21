@@ -8,6 +8,8 @@ The current frontend supports:
 - Manual WhatsApp confirmation flow
 - Delivery tracking timeline
 - Role-based auth for admin/dispatch operations
+- Admin tenant and auth-user management
+- Audit log retrieval for platform admin
 
 Runtime persistence:
 - PostgreSQL database via Prisma ORM (no JSON file storage in backend runtime)
@@ -118,6 +120,8 @@ Response `200`:
 Errors:
 - `400` invalid payload
 - `401` invalid credentials
+- `423` account locked after repeated failed attempts
+- `429` login rate-limit exceeded
 
 ### 3.2 Refresh Access Token
 `POST /auth/refresh`
@@ -137,6 +141,7 @@ Response `200`:
   "accessToken": "<jwt>",
   "tokenType": "Bearer",
   "expiresIn": "15m",
+  "refreshToken": "rt_rotated_xxx",
   "user": {
     "userId": "u-platform-admin",
     "email": "admin@greenspoon.com",
@@ -150,6 +155,10 @@ Response `200`:
 Errors:
 - `400` invalid payload
 - `401` invalid/expired refresh token
+
+Notes:
+- Refresh tokens are rotated on each successful refresh.
+- Store and use the new `refreshToken` returned by this endpoint.
 
 ### 3.3 Logout
 `POST /auth/logout`
@@ -180,6 +189,74 @@ Headers:
 - `Authorization: Bearer <accessToken>`
 
 Response `200`: authenticated user profile.
+
+### 3.5 User Management (Platform Admin)
+
+`GET /admin/users`
+
+Optional query:
+- `tenantId=<string>`
+- `role=<role>`
+- `isActive=true|false`
+
+`POST /admin/users`
+
+Request:
+
+```json
+{
+  "email": "ops@greenspoon.com",
+  "password": "OpsTeam@123",
+  "name": "Ops User",
+  "role": "manager",
+  "tenantId": "greenspoon-demo-tenant",
+  "isActive": true
+}
+```
+
+`PATCH /admin/users/:userId`
+
+Supports partial updates for:
+- `email`
+- `password`
+- `name`
+- `role`
+- `tenantId`
+- `isActive`
+
+`DELETE /admin/users/:userId`
+
+Soft-deactivates the user (`isActive=false`) and revokes refresh tokens.
+
+### 3.6 Audit Logs (Platform Admin)
+`GET /admin/audit-logs`
+
+Headers:
+- `Authorization: Bearer <accessToken>`
+
+Optional query:
+- `limit=<number>` (max 500)
+- `actorUserId=<string>`
+- `entityType=<string>`
+- `entityId=<string>`
+- `tenantId=<string>`
+- `action=<string>`
+- `status=<string>`
+- `from=<ISO date>`
+- `to=<ISO date>`
+
+Response `200`:
+- array of audit rows with fields:
+  - `id`
+  - `actorUserId`
+  - `actorEmail`
+  - `action`
+  - `entityType`
+  - `entityId`
+  - `tenantId`
+  - `status`
+  - `details` (JSON object)
+  - `createdAt` (epoch ms)
 
 ## 4) Tenant + Subscription Endpoints
 
@@ -763,3 +840,38 @@ To enable backend mode:
 - `current_lng`
 - `eta_minutes`
 - `updated_at`
+
+## 11) Observability Endpoints
+
+### 11.1 Health Check
+`GET /health`
+
+Response `200`:
+
+```json
+{
+  "ok": true,
+  "service": "greenspoon-backend",
+  "timestamp": 1740000000000
+}
+```
+
+### 11.2 Prometheus Metrics
+`GET /metrics`
+
+Response:
+- Prometheus text format with default Node metrics
+- custom HTTP metrics:
+  - `http_requests_total{method,status_code,route}`
+  - `http_request_duration_ms{method,status_code,route}` (histogram)
+  - `external_error_sink_events_total{sink,outcome}`
+
+### 11.3 Request Correlation
+- Every response includes `x-request-id`.
+- Send `x-request-id` on request to preserve an upstream correlation id.
+- Error responses include `details.requestId` for easier traceability.
+
+### 11.4 Error Sinks and Log Shipping
+- Optional Sentry sink via `SENTRY_DSN`.
+- Optional Datadog sink via `DATADOG_API_KEY` (site configurable with `DATADOG_SITE`).
+- Structured logs are emitted to stdout and optionally to file with `LOG_FILE_PATH` for agent-based shipping.

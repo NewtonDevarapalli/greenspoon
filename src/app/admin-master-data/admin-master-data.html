@@ -1,0 +1,220 @@
+<main class="master-shell">
+  <section class="head">
+    <p class="kicker">Platform Console</p>
+    <h1>Master Data Administration</h1>
+    <p>Manage users, roles, restaurants, tenants, and menu data directly in PostgreSQL.</p>
+    <button type="button" class="refresh-btn" (click)="refresh()">Refresh</button>
+  </section>
+
+  @if (errorMessage()) {
+    <section class="error-box">{{ errorMessage() }}</section>
+  }
+
+  @if (statusMessage()) {
+    <section class="success-box">{{ statusMessage() }}</section>
+  }
+
+  @if (loading()) {
+    <section class="placeholder">Loading master data...</section>
+  } @else {
+    <section class="card">
+      <h2>Create User</h2>
+      <div class="grid">
+        <input type="email" [(ngModel)]="userEmail" placeholder="Email" />
+        <input type="text" [(ngModel)]="userName" placeholder="Name" />
+        <input type="password" [(ngModel)]="userPassword" placeholder="Password" />
+        <select [(ngModel)]="userRole">
+          @for (role of roles(); track role.role) {
+            <option [value]="role.role">{{ role.label }}</option>
+          }
+        </select>
+        <select [(ngModel)]="userTenantId">
+          @for (tenant of tenants(); track tenant.tenantId) {
+            <option [value]="tenant.tenantId">{{ tenant.tenantId }}</option>
+          }
+        </select>
+      </div>
+      <button type="button" class="primary-btn" [disabled]="busyUserCreate()" (click)="createUser()">
+        {{ busyUserCreate() ? 'Creating...' : 'Create User' }}
+      </button>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Tenant</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.userId) {
+              <tr>
+                <td>{{ user.email }}</td>
+                <td>{{ user.role }}</td>
+                <td>{{ user.tenantId }}</td>
+                <td>{{ user.isActive ? 'active' : 'inactive' }}</td>
+                <td>
+                  <button
+                    type="button"
+                    [disabled]="!user.isActive || busyActionId() === 'user:' + user.userId"
+                    (click)="deactivateUser(user.userId)">
+                    {{ busyActionId() === 'user:' + user.userId ? 'Saving...' : 'Deactivate' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Create Restaurant</h2>
+      <div class="grid">
+        <input type="text" [(ngModel)]="restaurantId" placeholder="Restaurant ID" />
+        <select [(ngModel)]="restaurantTenantId">
+          @for (tenant of tenants(); track tenant.tenantId) {
+            <option [value]="tenant.tenantId">{{ tenant.tenantId }}</option>
+          }
+        </select>
+        <input type="text" [(ngModel)]="restaurantName" placeholder="Restaurant Name" />
+        <input type="text" [(ngModel)]="restaurantCity" placeholder="City" />
+        <label class="inline-check">
+          <input type="checkbox" [(ngModel)]="restaurantActive" />
+          Active
+        </label>
+      </div>
+      <button
+        type="button"
+        class="primary-btn"
+        [disabled]="busyRestaurantCreate()"
+        (click)="createRestaurant()">
+        {{ busyRestaurantCreate() ? 'Creating...' : 'Create Restaurant' }}
+      </button>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Tenant</th>
+              <th>City</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (restaurant of restaurants(); track restaurant.restaurantId) {
+              <tr>
+                <td>{{ restaurant.restaurantId }}</td>
+                <td>{{ restaurant.name }}</td>
+                <td>{{ restaurant.tenantId }}</td>
+                <td>{{ restaurant.city }}</td>
+                <td>{{ restaurant.isActive ? 'active' : 'inactive' }}</td>
+                <td>
+                  <button
+                    type="button"
+                    [disabled]="busyActionId() === 'restaurant:' + restaurant.restaurantId"
+                    (click)="toggleRestaurant(restaurant)">
+                    {{
+                      busyActionId() === 'restaurant:' + restaurant.restaurantId
+                        ? 'Saving...'
+                        : restaurant.isActive
+                        ? 'Deactivate'
+                        : 'Activate'
+                    }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Create Menu Item</h2>
+      <div class="grid">
+        <input type="text" [(ngModel)]="menuItemId" placeholder="Menu Item ID" />
+        <select [(ngModel)]="menuTenantId" (ngModelChange)="onMenuTenantChange()">
+          @for (tenant of tenants(); track tenant.tenantId) {
+            <option [value]="tenant.tenantId">{{ tenant.tenantId }}</option>
+          }
+        </select>
+        <select [(ngModel)]="menuRestaurantId">
+          @for (restaurant of restaurantsForTenant(menuTenantId); track restaurant.restaurantId) {
+            <option [value]="restaurant.restaurantId">{{ restaurant.name }}</option>
+          }
+        </select>
+        <input type="text" [(ngModel)]="menuName" placeholder="Item Name" />
+        <input type="text" [(ngModel)]="menuCategory" placeholder="Category" />
+        <input type="number" [(ngModel)]="menuPrice" placeholder="Price" />
+        <input type="text" [(ngModel)]="menuCalories" placeholder="Calories" />
+        <input type="text" [(ngModel)]="menuImage" placeholder="Image URL" />
+        <input type="text" [(ngModel)]="menuDescription" placeholder="Description" />
+        <label class="inline-check">
+          <input type="checkbox" [(ngModel)]="menuIsActive" />
+          Active
+        </label>
+        <input type="file" accept="image/*" (change)="onMenuImageSelected($event)" />
+        <button type="button" [disabled]="busyImageUpload()" (click)="uploadSelectedMenuImage()">
+          {{ busyImageUpload() ? 'Uploading...' : 'Upload Photo' }}
+        </button>
+      </div>
+      @if (menuImage) {
+        <div class="image-preview">
+          <img [src]="menuImage" alt="Menu preview" />
+        </div>
+      }
+      <button type="button" class="primary-btn" [disabled]="busyMenuCreate()" (click)="createMenuItem()">
+        {{ busyMenuCreate() ? 'Creating...' : 'Create Menu Item' }}
+      </button>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Restaurant</th>
+              <th>Tenant</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of menuItems(); track item.menuItemId) {
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.category }}</td>
+                <td>{{ item.restaurantId }}</td>
+                <td>{{ item.tenantId }}</td>
+                <td>INR {{ item.price }}</td>
+                <td>{{ item.isActive ? 'active' : 'inactive' }}</td>
+                <td>
+                  <button
+                    type="button"
+                    [disabled]="busyActionId() === 'menu:' + item.menuItemId"
+                    (click)="toggleMenuItem(item)">
+                    {{
+                      busyActionId() === 'menu:' + item.menuItemId
+                        ? 'Saving...'
+                        : item.isActive
+                        ? 'Deactivate'
+                        : 'Activate'
+                    }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</main>

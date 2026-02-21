@@ -1,0 +1,164 @@
+:host {
+  display: block;
+}
+
+.master-shell {
+  width: min(1200px, calc(100% - 2rem));
+  margin-inline: auto;
+  padding: 1.2rem 0 3rem;
+  display: grid;
+  gap: 1rem;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.head h1,
+.card h2 {
+  margin: 0;
+  color: #0f3a28;
+}
+
+.kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1f7a3f;
+}
+
+.head p {
+  margin: 0.25rem 0 0;
+  color: #496457;
+}
+
+.refresh-btn,
+.primary-btn,
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.refresh-btn {
+  margin-top: 0.5rem;
+  background: #e9f5eb;
+  color: #124029;
+}
+
+.primary-btn {
+  margin-top: 0.8rem;
+  background: linear-gradient(120deg, #1f7a3f, #7ac739);
+  color: #fff;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid rgba(16, 70, 38, 0.12);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.grid {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.grid input,
+.grid select {
+  width: 100%;
+  border: 1px solid rgba(16, 70, 38, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  font-family: inherit;
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #284b3a;
+}
+
+.image-preview {
+  margin-top: 0.6rem;
+}
+
+.image-preview img {
+  max-width: 220px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 70, 38, 0.16);
+}
+
+.table-wrap {
+  margin-top: 0.9rem;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.55rem 0.45rem;
+  border-bottom: 1px solid rgba(16, 70, 38, 0.12);
+  font-size: 0.92rem;
+}
+
+th {
+  color: #1b4b32;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td button {
+  background: #0f3a28;
+  color: #fff;
+}
+
+.error-box,
+.success-box,
+.placeholder {
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+}
+
+.error-box {
+  background: #fde9e9;
+  color: #8c1e1e;
+  border: 1px solid #f2b7b7;
+}
+
+.success-box {
+  background: #e8f7ed;
+  color: #1f6f3b;
+  border: 1px solid #b7e3c6;
+}
+
+.placeholder {
+  background: #f4f8f5;
+  color: #2d4d3b;
+}
+
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .master-shell {
+    width: min(1200px, calc(100% - 1rem));
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

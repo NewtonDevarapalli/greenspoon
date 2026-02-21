@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../services/cart';
+import { MasterDataApiService } from '../services/master-data-api';
 
 interface MenuItem {
   id: string;
@@ -18,12 +19,18 @@ interface MenuItem {
   templateUrl: './menu.html',
   styleUrl: './menu.scss'
 })
-export class Menu {
-  constructor(private readonly cart: CartService) {}
+export class Menu implements OnInit {
+  readonly loading = signal(true);
+  readonly errorMessage = signal('');
+
+  constructor(
+    private readonly cart: CartService,
+    private readonly masterDataApi: MasterDataApiService
+  ) {}
 
   readonly topTags = ['High Protein', 'Detox Friendly', 'No Refined Sugar', 'Fresh Daily'];
 
-  readonly menuItems: MenuItem[] = [
+  readonly menuItems = signal<MenuItem[]>([
     {
       id: 'power-sprouts-bowl',
       name: 'Power Sprouts Bowl',
@@ -72,7 +79,7 @@ export class Menu {
       price: 269,
       image: 'images/food4.png'
     }
-  ];
+  ]);
 
   readonly combos = [
     {
@@ -92,6 +99,10 @@ export class Menu {
     }
   ];
 
+  ngOnInit(): void {
+    void this.loadMenu();
+  }
+
   addToCart(item: MenuItem): void {
     this.cart.add({
       id: item.id,
@@ -101,5 +112,29 @@ export class Menu {
       price: item.price,
       calories: item.calories
     });
+  }
+
+  private async loadMenu(): Promise<void> {
+    this.loading.set(true);
+    this.errorMessage.set('');
+    try {
+      const remoteMenu = await this.masterDataApi.listPublicMenuItems();
+      if (remoteMenu.length > 0) {
+        this.menuItems.set(
+          remoteMenu.map((item) => ({
+            id: item.menuItemId,
+            name: item.name,
+            type: item.category,
+            calories: item.calories || 'N/A',
+            price: item.price,
+            image: item.image || 'images/food4.png',
+          }))
+        );
+      }
+    } catch {
+      this.errorMessage.set('Live menu not available. Showing default menu.');
+    } finally {
+      this.loading.set(false);
+    }
   }
 }

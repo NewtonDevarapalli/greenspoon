@@ -1,6 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
+const passwordHashRounds = Number(process.env.AUTH_PASSWORD_HASH_ROUNDS || 12);
 
 const PLAN_CATALOG = {
   monthly: { durationDays: 30, amount: 4999, currency: 'INR' },
@@ -8,8 +10,52 @@ const PLAN_CATALOG = {
   yearly: { durationDays: 365, amount: 49999, currency: 'INR' },
 };
 
+const DEMO_AUTH_USERS = [
+  {
+    userId: 'u-platform-admin',
+    email: 'admin@greenspoon.com',
+    password: 'Admin@123',
+    name: 'Platform Admin',
+    role: 'platform_admin',
+    tenantId: 'greenspoon-platform',
+  },
+  {
+    userId: 'u-owner',
+    email: 'owner@greenspoon.com',
+    password: 'Owner@123',
+    name: 'Restaurant Owner',
+    role: 'restaurant_owner',
+    tenantId: 'greenspoon-demo-tenant',
+  },
+  {
+    userId: 'u-manager',
+    email: 'manager@greenspoon.com',
+    password: 'Manager@123',
+    name: 'Kitchen Manager',
+    role: 'manager',
+    tenantId: 'greenspoon-demo-tenant',
+  },
+  {
+    userId: 'u-dispatch',
+    email: 'dispatch@greenspoon.com',
+    password: 'Dispatch@123',
+    name: 'Dispatch Lead',
+    role: 'dispatch',
+    tenantId: 'greenspoon-demo-tenant',
+  },
+  {
+    userId: 'u-customer',
+    email: 'customer@greenspoon.com',
+    password: 'Customer@123',
+    name: 'Green Spoon Customer',
+    role: 'customer',
+    tenantId: 'greenspoon-demo-tenant',
+  },
+];
+
 async function main() {
   const now = Date.now();
+  await seedAuthUsers(now);
 
   await upsertTenantWithSubscription({
     tenantId: 'greenspoon-platform',
@@ -27,10 +73,48 @@ async function main() {
     startAt: now - 7 * 24 * 60 * 60 * 1000,
   });
 
+  await seedRestaurantsAndMenu(now);
   await seedDemoOrders();
 
   // eslint-disable-next-line no-console
   console.log('Prisma seed completed.');
+}
+
+async function seedAuthUsers(now) {
+  const rounds = Number.isFinite(passwordHashRounds)
+    ? Math.min(Math.max(Math.floor(passwordHashRounds), 8), 14)
+    : 12;
+
+  for (const user of DEMO_AUTH_USERS) {
+    const passwordHash = await bcrypt.hash(user.password, rounds);
+    await prisma.authUser.upsert({
+      where: { userId: user.userId },
+      update: {
+        email: user.email.toLowerCase(),
+        passwordHash,
+        name: user.name,
+        role: user.role,
+        tenantId: user.tenantId,
+        isActive: true,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        updatedAt: new Date(now),
+      },
+      create: {
+        userId: user.userId,
+        email: user.email.toLowerCase(),
+        passwordHash,
+        name: user.name,
+        role: user.role,
+        tenantId: user.tenantId,
+        isActive: true,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        createdAt: new Date(now),
+        updatedAt: new Date(now),
+      },
+    });
+  }
 }
 
 async function upsertTenantWithSubscription({ tenantId, name, plan, status, startAt }) {
@@ -203,6 +287,118 @@ async function seedDemoOrders() {
       create: {
         orderId: order.orderId,
         ...buildTrackingRecord(order, now),
+      },
+    });
+  }
+}
+
+async function seedRestaurantsAndMenu(now) {
+  const restaurants = [
+    {
+      restaurantId: 'rest-gs-hyd-main',
+      tenantId: 'greenspoon-demo-tenant',
+      name: 'Green Spoon Hyderabad Main',
+      city: 'Hyderabad',
+      isActive: true,
+    },
+    {
+      restaurantId: 'rest-gs-hyd-cloud',
+      tenantId: 'greenspoon-demo-tenant',
+      name: 'Green Spoon Hyderabad Cloud Hub',
+      city: 'Hyderabad',
+      isActive: true,
+    },
+  ];
+
+  for (const restaurant of restaurants) {
+    await prisma.restaurant.upsert({
+      where: { restaurantId: restaurant.restaurantId },
+      update: {
+        tenantId: restaurant.tenantId,
+        name: restaurant.name,
+        city: restaurant.city,
+        isActive: restaurant.isActive,
+        updatedAt: new Date(now),
+      },
+      create: {
+        restaurantId: restaurant.restaurantId,
+        tenantId: restaurant.tenantId,
+        name: restaurant.name,
+        city: restaurant.city,
+        isActive: restaurant.isActive,
+        createdAt: new Date(now),
+        updatedAt: new Date(now),
+      },
+    });
+  }
+
+  const menuItems = [
+    {
+      menuItemId: 'menu-power-sprouts-bowl',
+      tenantId: 'greenspoon-demo-tenant',
+      restaurantId: 'rest-gs-hyd-main',
+      name: 'Power Sprouts Bowl',
+      category: 'Sprouts',
+      description: 'Protein rich sprouts bowl with crunchy seeds.',
+      image: 'images/food4.png',
+      price: 219,
+      calories: '320 kcal',
+      isActive: true,
+    },
+    {
+      menuItemId: 'menu-zesty-quinoa-salad',
+      tenantId: 'greenspoon-demo-tenant',
+      restaurantId: 'rest-gs-hyd-main',
+      name: 'Zesty Quinoa Salad',
+      category: 'Salads',
+      description: 'Quinoa, greens, and citrus dressing.',
+      image: 'images/food2.png',
+      price: 249,
+      calories: '280 kcal',
+      isActive: true,
+    },
+    {
+      menuItemId: 'menu-cucumber-mint-cooler',
+      tenantId: 'greenspoon-demo-tenant',
+      restaurantId: 'rest-gs-hyd-cloud',
+      name: 'Cucumber Mint Cooler',
+      category: 'Better Water',
+      description: 'Infused hydration with cucumber and mint.',
+      image: 'images/food1.png',
+      price: 99,
+      calories: '30 kcal',
+      isActive: true,
+    },
+  ];
+
+  for (const item of menuItems) {
+    await prisma.menuItem.upsert({
+      where: { menuItemId: item.menuItemId },
+      update: {
+        tenantId: item.tenantId,
+        restaurantId: item.restaurantId,
+        name: item.name,
+        category: item.category,
+        description: item.description,
+        image: item.image,
+        price: item.price,
+        calories: item.calories,
+        isActive: item.isActive,
+        updatedAt: new Date(now),
+      },
+      create: {
+        menuItemId: item.menuItemId,
+        tenantId: item.tenantId,
+        restaurantId: item.restaurantId,
+        name: item.name,
+        category: item.category,
+        description: item.description,
+        image: item.image,
+        price: item.price,
+        calories: item.calories,
+        isActive: item.isActive,
+        createdAt: new Date(now),
+        updatedAt: new Date(now),
       },
     });
   }

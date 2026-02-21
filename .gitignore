@@ -43,3 +43,9 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Local development/runtime artifacts
+.vs/
+backend/.env
+backend/.env.production
+backend/uploads/

@@ -15,6 +15,7 @@
       <a routerLink="/contact" routerLinkActive="active">Contact</a>
       @if (canAccessTenantOps()) {
         <a routerLink="/admin/tenants" routerLinkActive="active">Tenants</a>
+        <a routerLink="/admin/master-data" routerLinkActive="active">Master Data</a>
       }
       @if (canAccessAdmin()) {
         <a routerLink="/admin/orders" routerLinkActive="active">Orders</a>

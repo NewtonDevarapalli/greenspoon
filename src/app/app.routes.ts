@@ -12,6 +12,7 @@ import { MyOrders } from './my-orders/my-orders';
 import { Login } from './login/login';
 import { authRoleGuard } from './guards/auth-role.guard';
 import { AdminTenants } from './admin-tenants/admin-tenants';
+import { AdminMasterData } from './admin-master-data/admin-master-data';
 import { SubscriptionBlocked } from './subscription-blocked/subscription-blocked';
 
 export const routes: Routes = [
@@ -28,6 +29,12 @@ export const routes: Routes = [
   {
     path: 'admin/tenants',
     component: AdminTenants,
+    canActivate: [authRoleGuard],
+    data: { roles: ['platform_admin'] },
+  },
+  {
+    path: 'admin/master-data',
+    component: AdminMasterData,
     canActivate: [authRoleGuard],
     data: { roles: ['platform_admin'] },
   },

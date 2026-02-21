@@ -7,6 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AuthUser {
+  userId     String   @id
+  email      String   @unique
+  passwordHash String
+  name       String
+  role       String
+  tenantId   String
+  isActive   Boolean  @default(true)
+  failedLoginAttempts Int @default(0)
+  lockedUntil DateTime?
+  lastLoginAt DateTime?
+  createdAt  DateTime
+  updatedAt  DateTime
+
+  @@index([tenantId, role])
+}
+
 model Tenant {
   tenantId   String   @id
   name       String
@@ -90,4 +107,52 @@ model CustomerLookupOtp {
   expiresAt DateTime
 
   @@index([tenantId, phone, expiresAt])
+}
+
+model Restaurant {
+  restaurantId String   @id
+  tenantId     String
+  name         String
+  city         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime
+  updatedAt    DateTime
+
+  @@index([tenantId, isActive])
+  @@index([tenantId, name])
+}
+
+model MenuItem {
+  menuItemId    String   @id
+  tenantId      String
+  restaurantId  String
+  name          String
+  category      String
+  description   String?
+  image         String?
+  price         Int
+  calories      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  @@index([tenantId, restaurantId, isActive])
+  @@index([tenantId, category, isActive])
+}
+
+model AuditLog {
+  id          String   @id
+  actorUserId String?
+  actorEmail  String?
+  action      String
+  entityType  String
+  entityId    String?
+  tenantId    String?
+  status      String
+  details     Json
+  createdAt   DateTime
+
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId, createdAt])
 }
